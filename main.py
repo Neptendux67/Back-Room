@@ -17,7 +17,7 @@ try:
 except pygame.error:
     sound_available = False
 
-WIDTH, HEIGHT = 1000, 620
+WIDTH, HEIGHT = 1920, 1080
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Backroom - Apparament Anormal...")
 clock = pygame.time.Clock()
@@ -26,31 +26,11 @@ FONT = pygame.font.SysFont("arial", 22)
 BIG = pygame.font.SysFont("arial", 46, bold=True)
 SMALL = pygame.font.SysFont("arial", 16)
 
-# Chargement texture mur PNG (cherche dans le même dossier que le script)
-_wall_tex_raw = None
-WALL_TEX = None
-WALL_TEX_ARRAY = None
-_wall_tex_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mur.png")
-if not os.path.isfile(_wall_tex_path):
-    _wall_tex_path = "mur.png"
-try:
-    _wall_tex_raw = pygame.image.load(_wall_tex_path).convert()
-    TEX_W = _wall_tex_raw.get_width()
-    TEX_H = _wall_tex_raw.get_height()
-    WALL_TEX = _wall_tex_raw
-    import numpy as np
-    WALL_TEX_ARRAY = pygame.surfarray.array3d(WALL_TEX)  # shape (W, H, 3)
-except Exception:
-    WALL_TEX = None
-    WALL_TEX_ARRAY = None
-    TEX_W = 64
-    TEX_H = 64
-
 FOV = math.pi / 3
-RAYS = 240
+RAYS = 460
 MAX_DEPTH = 18
 MOUSE_SENSITIVITY = 0.0032
-PITCH_LIMIT = 230
+PITCH_LIMIT = 400
 
 APARTMENT_MAP = [
     "111111111111111",
@@ -462,24 +442,21 @@ def draw_floor_ceiling():
     pygame.draw.rect(screen, ceiling, (0, 0, WIDTH, max(0, horizon)))
     pygame.draw.rect(screen, floor_base, (0, horizon, WIDTH, HEIGHT - horizon))
 
-    for y in range(max(horizon, 0), HEIGHT, 24):
+    for y in range(max(horizon, 0), HEIGHT, 42):
         pygame.draw.line(screen, (82, 58, 34), (0, y), (WIDTH, y), 1)
 
-    for x in range(0, WIDTH, 96):
+    for x in range(0, WIDTH, 167):
         pygame.draw.line(screen, (105, 72, 39), (x, max(horizon, 0)), (x, HEIGHT), 1)
 
     if day != 4 or power_fixed:
-        for x in range(0, WIDTH, 120):
-            pygame.draw.rect(screen, (235, 231, 202), (x, 0, 70, 18))
-            pygame.draw.line(screen, (170, 166, 145), (x, 18), (x + 70, 18), 1)
+        for x in range(0, WIDTH, 209):
+            pygame.draw.rect(screen, (235, 231, 202), (x, 0, 122, 30))
+            pygame.draw.line(screen, (170, 166, 145), (x, 30), (x + 122, 30), 1)
 
 
 def cast_rays():
     start_angle = player_a - FOV / 2
     depth_buffer = [MAX_DEPTH] * WIDTH
-
-    # Nombre de répétitions de la texture par unité de mur
-    TILE_SCALE = 2.0
 
     for ray in range(RAYS):
         ray_angle = start_angle + ray / RAYS * FOV
@@ -521,59 +498,8 @@ def cast_rays():
         if not vertical_hit:
             shade *= 0.75
 
-        if WALL_TEX_ARRAY is not None:
-            # Coordonnée U horizontale (répétée avec TILE_SCALE)
-            wall_u = fy if vertical_hit else fx
-            tex_x = int((wall_u * TILE_SCALE % 1.0) * TEX_W) % TEX_W
-
-            # Construire une colonne de hauteur wall_h avec mapping V tiled
-            col_h = max(1, wall_h)
-            col_arr = np.zeros((col_h, 3), dtype=np.uint8)
-            for py in range(col_h):
-                # V normalisé 0..1 sur la hauteur du mur, répété TILE_SCALE fois
-                v = (py / col_h * TILE_SCALE) % 1.0
-                tex_y = int(v * TEX_H) % TEX_H
-                r, g, b = WALL_TEX_ARRAY[tex_x, tex_y]
-                col_arr[py] = (
-                    min(255, int(r * shade)),
-                    min(255, int(g * shade)),
-                    min(255, int(b * shade)),
-                )
-
-            # Transformer en surface et blitter
-            tex_strip = pygame.surfarray.make_surface(
-                col_arr[np.newaxis, :, :]  # shape (1, col_h, 3)
-            )
-            scaled = pygame.transform.scale(tex_strip, (w, col_h))
-            clip_top = max(0, -y1)
-            clip_h = min(col_h - clip_top, HEIGHT - max(0, y1))
-            if clip_h > 0:
-                screen.blit(scaled, (x_screen, max(0, y1)),
-                            (0, clip_top, w, clip_h))
-
-        elif WALL_TEX is not None:
-            wall_u = fy if vertical_hit else fx
-            tex_x = int((wall_u * TILE_SCALE % 1.0) * TEX_W) % TEX_W
-            col_h = max(1, wall_h)
-            tex_strip = pygame.Surface((1, col_h))
-            for py in range(col_h):
-                v = (py / col_h * TILE_SCALE) % 1.0
-                tex_y = int(v * TEX_H) % TEX_H
-                r, g, b = WALL_TEX.get_at((tex_x, tex_y))[:3]
-                tex_strip.set_at((0, py), (
-                    max(0, min(255, int(r * shade))),
-                    max(0, min(255, int(g * shade))),
-                    max(0, min(255, int(b * shade))),
-                ))
-            scaled = pygame.transform.scale(tex_strip, (w, col_h))
-            clip_top = max(0, -y1)
-            clip_h2 = min(col_h - clip_top, HEIGHT - max(0, y1))
-            if clip_h2 > 0:
-                screen.blit(scaled, (x_screen, max(0, y1)),
-                            (0, clip_top, w, clip_h2))
-        else:
-            color = wall_texture_color(hit_x, hit_y, depth, vertical_hit)
-            pygame.draw.rect(screen, color, (x_screen, y1, w, wall_h))
+        color = wall_texture_color(hit_x, hit_y, depth, vertical_hit)
+        pygame.draw.rect(screen, color, (x_screen, y1, w, wall_h))
 
         # Plinthe claire en bas des murs
         baseboard_h = max(2, min(12, wall_h // 13))
@@ -703,20 +629,20 @@ def reset_cable_task():
 
 
 def cable_panel_rects():
-    panel = pygame.Rect(WIDTH // 2 - 310, HEIGHT // 2 - 210, 620, 420)
-    close = pygame.Rect(panel.right - 46, panel.top + 16, 28, 28)
+    panel = pygame.Rect(WIDTH // 2 - 430, HEIGHT // 2 - 300, 860, 600)
+    close = pygame.Rect(panel.right - 64, panel.top + 24, 36, 36)
     left = {}
     right = {}
     left_order = ["rouge", "jaune", "bleu"]
     right_order = ["bleu", "rouge", "jaune"]
 
     for index, name in enumerate(left_order):
-        y = panel.top + 135 + index * 86
-        left[name] = pygame.Rect(panel.left + 74, y - 18, 36, 36)
+        y = panel.top + 180 + index * 120
+        left[name] = pygame.Rect(panel.left + 100, y - 24, 50, 50)
 
     for index, name in enumerate(right_order):
-        y = panel.top + 135 + index * 86
-        right[name] = pygame.Rect(panel.right - 110, y - 18, 36, 36)
+        y = panel.top + 180 + index * 120
+        right[name] = pygame.Rect(panel.right - 150, y - 24, 50, 50)
 
     return panel, close, left, right
 
@@ -793,38 +719,38 @@ def draw_cable_panel():
     shade.fill((0, 0, 0, 165))
     screen.blit(shade, (0, 0))
 
-    pygame.draw.rect(screen, (28, 29, 31), panel, border_radius=10)
-    pygame.draw.rect(screen, (190, 170, 104), panel, 3, border_radius=10)
-    pygame.draw.rect(screen, (18, 18, 20), panel.inflate(-34, -82), border_radius=8)
+    pygame.draw.rect(screen, (28, 29, 31), panel, border_radius=12)
+    pygame.draw.rect(screen, (190, 170, 104), panel, 4, border_radius=12)
+    pygame.draw.rect(screen, (18, 18, 20), panel.inflate(-48, -120), border_radius=10)
 
     title = FONT.render("Boite electrique - relie les 3 cables", True, (245, 233, 190))
-    screen.blit(title, (panel.left + 28, panel.top + 22))
+    screen.blit(title, (panel.left + 40, panel.top + 30))
     help_text = SMALL.render("Clique un cable a gauche, puis sa prise de meme couleur a droite. E ou X pour fermer.", True, (205, 205, 190))
-    screen.blit(help_text, (panel.left + 28, panel.top + 56))
+    screen.blit(help_text, (panel.left + 40, panel.top + 80))
 
-    pygame.draw.rect(screen, (75, 42, 42), close, border_radius=4)
-    pygame.draw.rect(screen, (220, 180, 140), close, 2, border_radius=4)
+    pygame.draw.rect(screen, (75, 42, 42), close, border_radius=6)
+    pygame.draw.rect(screen, (220, 180, 140), close, 3, border_radius=6)
     x_text = SMALL.render("X", True, (255, 235, 220))
     screen.blit(x_text, (close.centerx - x_text.get_width() // 2, close.centery - x_text.get_height() // 2))
 
     for name, rect in left.items():
         color = CABLE_COLORS[name]
         label = SMALL.render(name, True, (230, 230, 220))
-        screen.blit(label, (rect.left - 8, rect.top - 22))
-        pygame.draw.circle(screen, color, rect.center, 16)
-        pygame.draw.circle(screen, (20, 20, 20), rect.center, 16, 3)
+        screen.blit(label, (rect.left - 8, rect.top - 32))
+        pygame.draw.circle(screen, color, rect.center, 22)
+        pygame.draw.circle(screen, (20, 20, 20), rect.center, 22, 4)
         if cable_connected[name]:
-            pygame.draw.circle(screen, (120, 220, 120), rect.center, 7)
+            pygame.draw.circle(screen, (120, 220, 120), rect.center, 10)
         elif selected_cable == name:
-            pygame.draw.circle(screen, (255, 255, 230), rect.center, 20, 3)
+            pygame.draw.circle(screen, (255, 255, 230), rect.center, 28, 4)
 
     for name, rect in right.items():
         color = CABLE_COLORS[name]
-        pygame.draw.rect(screen, (42, 43, 47), rect.inflate(18, 18), border_radius=6)
-        pygame.draw.circle(screen, color, rect.center, 14)
-        pygame.draw.circle(screen, (12, 12, 12), rect.center, 14, 3)
+        pygame.draw.rect(screen, (42, 43, 47), rect.inflate(24, 24), border_radius=8)
+        pygame.draw.circle(screen, color, rect.center, 20)
+        pygame.draw.circle(screen, (12, 12, 12), rect.center, 20, 4)
         label = SMALL.render("prise " + name, True, (230, 230, 220))
-        screen.blit(label, (rect.right + 12, rect.centery - label.get_height() // 2))
+        screen.blit(label, (rect.right + 18, rect.centery - label.get_height() // 2))
 
     for name, done in cable_connected.items():
         if done:
@@ -833,21 +759,21 @@ def draw_cable_panel():
             mid_x = (start[0] + end[0]) // 2
             points = [
                 start,
-                (mid_x - 60, start[1] + 20),
-                (mid_x + 60, end[1] - 20),
+                (mid_x - 80, start[1] + 30),
+                (mid_x + 80, end[1] - 30),
                 end,
             ]
-            pygame.draw.lines(screen, CABLE_COLORS[name], False, points, 8)
-            pygame.draw.lines(screen, (20, 20, 20), False, points, 2)
+            pygame.draw.lines(screen, CABLE_COLORS[name], False, points, 12)
+            pygame.draw.lines(screen, (20, 20, 20), False, points, 3)
 
     if selected_cable:
         start = left[selected_cable].center
-        pygame.draw.line(screen, CABLE_COLORS[selected_cable], start, mouse_pos, 7)
-        pygame.draw.line(screen, (20, 20, 20), start, mouse_pos, 2)
+        pygame.draw.line(screen, CABLE_COLORS[selected_cable], start, mouse_pos, 10)
+        pygame.draw.line(screen, (20, 20, 20), start, mouse_pos, 3)
 
     progress = sum(cable_connected.values())
     status = FONT.render(str(progress) + " / 3 cables relies", True, (245, 233, 190))
-    screen.blit(status, (panel.centerx - status.get_width() // 2, panel.bottom - 48))
+    screen.blit(status, (panel.centerx - status.get_width() // 2, panel.bottom - 70))
 
 
 def add_item_to_inventory(item_name):
@@ -942,29 +868,29 @@ def draw_safe_panel():
     shade.fill((0, 0, 0, 170))
     screen.blit(shade, (0, 0))
 
-    panel = pygame.Rect(WIDTH // 2 - 230, HEIGHT // 2 - 160, 460, 320)
-    pygame.draw.rect(screen, (25, 27, 30), panel, border_radius=10)
-    pygame.draw.rect(screen, (150, 150, 145), panel, 3, border_radius=10)
+    panel = pygame.Rect(WIDTH // 2 - 320, HEIGHT // 2 - 240, 640, 480)
+    pygame.draw.rect(screen, (25, 27, 30), panel, border_radius=12)
+    pygame.draw.rect(screen, (150, 150, 145), panel, 4, border_radius=12)
 
     title = FONT.render("Coffre fort", True, (235, 235, 220))
-    screen.blit(title, (panel.centerx - title.get_width() // 2, panel.top + 26))
+    screen.blit(title, (panel.centerx - title.get_width() // 2, panel.top + 36))
 
-    display = pygame.Rect(panel.centerx - 115, panel.top + 88, 230, 58)
-    pygame.draw.rect(screen, (8, 12, 10), display, border_radius=6)
-    pygame.draw.rect(screen, (80, 120, 85), display, 2, border_radius=6)
+    display = pygame.Rect(panel.centerx - 160, panel.top + 120, 320, 80)
+    pygame.draw.rect(screen, (8, 12, 10), display, border_radius=8)
+    pygame.draw.rect(screen, (80, 120, 85), display, 3, border_radius=8)
     shown = safe_input + "_" * (len(safe_code) - len(safe_input))
     code_text = BIG.render(shown, True, (120, 255, 150))
     screen.blit(code_text, (display.centerx - code_text.get_width() // 2, display.centery - code_text.get_height() // 2))
 
     help_text = SMALL.render("Tape le code puis Entree. E ou Echap pour fermer.", True, (210, 210, 200))
-    screen.blit(help_text, (panel.centerx - help_text.get_width() // 2, panel.top + 168))
+    screen.blit(help_text, (panel.centerx - help_text.get_width() // 2, panel.top + 240))
 
     for i in range(10):
         col = i % 5
         row = i // 5
-        key_rect = pygame.Rect(panel.left + 76 + col * 64, panel.top + 205 + row * 44, 44, 32)
-        pygame.draw.rect(screen, (48, 51, 56), key_rect, border_radius=5)
-        pygame.draw.rect(screen, (120, 120, 118), key_rect, 1, border_radius=5)
+        key_rect = pygame.Rect(panel.left + 100 + col * 90, panel.top + 290 + row * 64, 60, 48)
+        pygame.draw.rect(screen, (48, 51, 56), key_rect, border_radius=6)
+        pygame.draw.rect(screen, (120, 120, 118), key_rect, 2, border_radius=6)
         txt = SMALL.render(str(i), True, (240, 240, 230))
         screen.blit(txt, (key_rect.centerx - txt.get_width() // 2, key_rect.centery - txt.get_height() // 2))
 
@@ -1161,13 +1087,13 @@ def draw_ceiling_code_hint():
     if day != 3:
         return
 
-    if distance(player_x, player_y, 1.5, 9.5) > 2.2 or look_pitch < 95:
+    if distance(player_x, player_y, 1.5, 9.5) > 2.2 or look_pitch < 165:
         return
 
     text = BIG.render("CODE " + safe_code, True, (65, 55, 38))
     shadow = BIG.render("CODE " + safe_code, True, (210, 200, 160))
     x = WIDTH // 2 - text.get_width() // 2
-    y = 108
+    y = 188
     screen.blit(shadow, (x + 2, y + 2))
     screen.blit(text, (x, y))
 
@@ -1175,7 +1101,7 @@ def draw_ceiling_code_hint():
 def draw_player_body(moving):
     tick = pygame.time.get_ticks() / 1000
     walk = math.sin(tick * (8.0 if moving else 2.0))
-    bob = int(walk * (7 if moving else 2))
+    bob = int(walk * (12 if moving else 3))
     light = 0.55 if day == 4 and not power_fixed else 1.0
 
     skin = color_with_light((214, 164, 118), light)
@@ -1186,82 +1112,82 @@ def draw_player_body(moving):
 
     overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
 
-    left_hand = (int(WIDTH * 0.27), HEIGHT - 70 + bob)
-    right_hand = (int(WIDTH * 0.73), HEIGHT - 67 - bob)
+    left_hand = (int(WIDTH * 0.27), HEIGHT - 122 + bob)
+    right_hand = (int(WIDTH * 0.73), HEIGHT - 117 - bob)
 
     pygame.draw.polygon(overlay, (*sleeve, 245), [
-        (left_hand[0] - 105, HEIGHT),
-        (left_hand[0] - 52, HEIGHT - 36 + bob),
-        (left_hand[0] - 18, HEIGHT - 12 + bob),
-        (left_hand[0] - 35, HEIGHT),
+        (left_hand[0] - 183, HEIGHT),
+        (left_hand[0] - 90, HEIGHT - 63 + bob),
+        (left_hand[0] - 31, HEIGHT - 21 + bob),
+        (left_hand[0] - 61, HEIGHT),
     ])
     pygame.draw.polygon(overlay, (*sleeve, 245), [
-        (right_hand[0] + 105, HEIGHT),
-        (right_hand[0] + 52, HEIGHT - 36 - bob),
-        (right_hand[0] + 18, HEIGHT - 12 - bob),
-        (right_hand[0] + 35, HEIGHT),
+        (right_hand[0] + 183, HEIGHT),
+        (right_hand[0] + 90, HEIGHT - 63 - bob),
+        (right_hand[0] + 31, HEIGHT - 21 - bob),
+        (right_hand[0] + 61, HEIGHT),
     ])
 
-    pygame.draw.ellipse(overlay, (*skin, 255), (left_hand[0] - 45, left_hand[1] - 28, 58, 40))
-    pygame.draw.ellipse(overlay, (*skin_shadow, 210), (left_hand[0] - 24, left_hand[1] - 16, 30, 17))
-    pygame.draw.ellipse(overlay, (*skin, 255), (right_hand[0] - 13, right_hand[1] - 28, 58, 40))
-    pygame.draw.ellipse(overlay, (*skin_shadow, 210), (right_hand[0] - 1, right_hand[1] - 15, 30, 17))
+    pygame.draw.ellipse(overlay, (*skin, 255), (left_hand[0] - 78, left_hand[1] - 49, 101, 70))
+    pygame.draw.ellipse(overlay, (*skin_shadow, 210), (left_hand[0] - 42, left_hand[1] - 28, 52, 30))
+    pygame.draw.ellipse(overlay, (*skin, 255), (right_hand[0] - 23, right_hand[1] - 49, 101, 70))
+    pygame.draw.ellipse(overlay, (*skin_shadow, 210), (right_hand[0] - 2, right_hand[1] - 26, 52, 30))
 
     if selected_item() == "Clef":
-        key_x = right_hand[0] + 14
-        key_y = right_hand[1] - 18
+        key_x = right_hand[0] + 24
+        key_y = right_hand[1] - 31
         gold = color_with_light((230, 190, 70), light)
-        pygame.draw.circle(overlay, (*gold, 255), (key_x, key_y), 8, 3)
-        pygame.draw.line(overlay, (*gold, 255), (key_x + 8, key_y), (key_x + 42, key_y + 2), 5)
-        pygame.draw.line(overlay, (*gold, 255), (key_x + 32, key_y + 2), (key_x + 32, key_y + 13), 4)
-        pygame.draw.line(overlay, (*gold, 255), (key_x + 41, key_y + 2), (key_x + 41, key_y + 10), 4)
+        pygame.draw.circle(overlay, (*gold, 255), (key_x, key_y), 14, 5)
+        pygame.draw.line(overlay, (*gold, 255), (key_x + 14, key_y), (key_x + 73, key_y + 3), 9)
+        pygame.draw.line(overlay, (*gold, 255), (key_x + 56, key_y + 3), (key_x + 56, key_y + 23), 7)
+        pygame.draw.line(overlay, (*gold, 255), (key_x + 71, key_y + 3), (key_x + 71, key_y + 17), 7)
 
-    if look_pitch < -70:
-        foot_alpha = max(0, min(235, int((-look_pitch - 70) * 2.2)))
-        foot_y = HEIGHT - 124 + int(max(-50, look_pitch) * 0.18)
-        spread = 58 + int(min(45, -look_pitch * 0.25))
+    if look_pitch < -122:
+        foot_alpha = max(0, min(235, int((-look_pitch - 122) * 1.26)))
+        foot_y = HEIGHT - 216 + int(max(-88, look_pitch) * 0.18)
+        spread = 101 + int(min(80, -look_pitch * 0.25))
         pygame.draw.polygon(overlay, (*sleeve, foot_alpha), [
-            (WIDTH // 2 - spread - 22, HEIGHT),
-            (WIDTH // 2 - spread + 20, foot_y + 62),
-            (WIDTH // 2 - spread + 48, HEIGHT),
+            (WIDTH // 2 - spread - 38, HEIGHT),
+            (WIDTH // 2 - spread + 35, foot_y + 108),
+            (WIDTH // 2 - spread + 84, HEIGHT),
         ])
         pygame.draw.polygon(overlay, (*sleeve, foot_alpha), [
-            (WIDTH // 2 + spread + 22, HEIGHT),
-            (WIDTH // 2 + spread - 20, foot_y + 62),
-            (WIDTH // 2 + spread - 48, HEIGHT),
+            (WIDTH // 2 + spread + 38, HEIGHT),
+            (WIDTH // 2 + spread - 35, foot_y + 108),
+            (WIDTH // 2 + spread - 84, HEIGHT),
         ])
-        pygame.draw.ellipse(overlay, (*shoe, foot_alpha), (WIDTH // 2 - spread - 50, foot_y, 86, 46))
-        pygame.draw.ellipse(overlay, (*shoe, foot_alpha), (WIDTH // 2 + spread - 36, foot_y, 86, 46))
-        pygame.draw.rect(overlay, (*sole, foot_alpha), (WIDTH // 2 - spread - 36, foot_y + 32, 58, 7), border_radius=3)
-        pygame.draw.rect(overlay, (*sole, foot_alpha), (WIDTH // 2 + spread - 22, foot_y + 32, 58, 7), border_radius=3)
+        pygame.draw.ellipse(overlay, (*shoe, foot_alpha), (WIDTH // 2 - spread - 87, foot_y, 150, 80))
+        pygame.draw.ellipse(overlay, (*shoe, foot_alpha), (WIDTH // 2 + spread - 63, foot_y, 150, 80))
+        pygame.draw.rect(overlay, (*sole, foot_alpha), (WIDTH // 2 - spread - 63, foot_y + 56, 101, 12), border_radius=5)
+        pygame.draw.rect(overlay, (*sole, foot_alpha), (WIDTH // 2 + spread - 38, foot_y + 56, 101, 12), border_radius=5)
 
     screen.blit(overlay, (0, 0))
 
 
 def draw_health_bar():
-    x, y = 138, 14
-    bar_w, bar_h = 124, 16
-    pygame.draw.rect(screen, (35, 12, 12), (x, y, bar_w, bar_h), border_radius=4)
+    x, y = 240, 24
+    bar_w, bar_h = 216, 28
+    pygame.draw.rect(screen, (35, 12, 12), (x, y, bar_w, bar_h), border_radius=6)
     fill_w = int(bar_w * max(0, player_health) / MAX_HEALTH)
-    pygame.draw.rect(screen, (190, 35, 35), (x, y, fill_w, bar_h), border_radius=4)
-    pygame.draw.rect(screen, (235, 210, 185), (x, y, bar_w, bar_h), 2, border_radius=4)
+    pygame.draw.rect(screen, (190, 35, 35), (x, y, fill_w, bar_h), border_radius=6)
+    pygame.draw.rect(screen, (235, 210, 185), (x, y, bar_w, bar_h), 3, border_radius=6)
     hp = SMALL.render("PV " + str(player_health) + "/" + str(MAX_HEALTH), True, (255, 235, 220))
-    screen.blit(hp, (x + bar_w + 8, y - 1))
+    screen.blit(hp, (x + bar_w + 14, y - 1))
 
 
 def draw_day_timer():
     remaining = max(0, int(math.ceil(day_timer)))
     color = (255, 235, 170) if remaining > 10 else (255, 90, 70)
     text = FONT.render("Temps : " + str(remaining) + "s", True, color)
-    screen.blit(text, (WIDTH // 2 - text.get_width() // 2, 12))
+    screen.blit(text, (WIDTH // 2 - text.get_width() // 2, 21))
 
 
 def draw_inventory_bar():
-    slot_size = 52
-    gap = 8
+    slot_size = 90
+    gap = 14
     total_w = slot_size * 4 + gap * 3
     x0 = WIDTH // 2 - total_w // 2
-    y = HEIGHT - 64
+    y = HEIGHT - 112
 
     for index in range(4):
         rect = pygame.Rect(x0 + index * (slot_size + gap), y, slot_size, slot_size)
@@ -1286,9 +1212,9 @@ def draw_inventory_bar():
 def draw_ui():
     global message_timer
 
-    pygame.draw.rect(screen, (0, 0, 0), (0, 0, WIDTH, 74))
+    pygame.draw.rect(screen, (0, 0, 0), (0, 0, WIDTH, 130))
     title = FONT.render("Jour " + str(day) + " / 5", True, (255, 235, 170))
-    screen.blit(title, (18, 12))
+    screen.blit(title, (30, 21))
     draw_health_bar()
     draw_day_timer()
 
@@ -1305,25 +1231,25 @@ def draw_ui():
         obj = "Objectif : cours jusqu'au fond du couloir. La porte s'ouvre dans les 10 dernieres secondes !"
 
     objective = SMALL.render(obj, True, (220, 220, 220))
-    screen.blit(objective, (18, 43))
+    screen.blit(objective, (30, 75))
 
     controls = SMALL.render("Souris | ZQSD/WASD | Molette inv. | E | ESPACE | ESC", True, (185, 185, 185))
-    screen.blit(controls, (WIDTH - controls.get_width() - 16, 18))
+    screen.blit(controls, (WIDTH - controls.get_width() - 30, 31))
 
     if message_timer > 0:
-        box = pygame.Rect(20, HEIGHT - 138, WIDTH - 40, 52)
+        box = pygame.Rect(30, HEIGHT - 240, WIDTH - 60, 90)
         pygame.draw.rect(screen, (0, 0, 0), box)
-        pygame.draw.rect(screen, (180, 160, 110), box, 2)
+        pygame.draw.rect(screen, (180, 160, 110), box, 3)
         txt = FONT.render(message, True, (255, 245, 210))
-        screen.blit(txt, (box.x + 14, box.y + 13))
+        screen.blit(txt, (box.x + 24, box.y + 22))
         message_timer -= 1
 
     if stuck:
         txt = BIG.render("TU T'ENFONCES ! APPUIE SUR ESPACE", True, (255, 80, 80))
-        screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - 120))
-        bar_w = 360
-        pygame.draw.rect(screen, (50, 50, 50), (WIDTH // 2 - bar_w // 2, HEIGHT // 2 - 55, bar_w, 20))
-        pygame.draw.rect(screen, (255, 70, 70), (WIDTH // 2 - bar_w // 2, HEIGHT // 2 - 55, int(bar_w * stuck_clicks / 18), 20))
+        screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - 200))
+        bar_w = 600
+        pygame.draw.rect(screen, (50, 50, 50), (WIDTH // 2 - bar_w // 2, HEIGHT // 2 - 100, bar_w, 34))
+        pygame.draw.rect(screen, (255, 70, 70), (WIDTH // 2 - bar_w // 2, HEIGHT // 2 - 100, int(bar_w * stuck_clicks / 18), 34))
 
     if day == 4 and not power_fixed:
         alpha = max(40, min(180, int(220 - heartbeat * 40)))
@@ -1332,11 +1258,11 @@ def draw_ui():
         screen.blit(red, (0, 0))
 
         if distance(player_x, player_y, CABLE_X, CABLE_Y) < 1.6:
-            bar_w = 300
-            pygame.draw.rect(screen, (30, 30, 30), (WIDTH // 2 - bar_w // 2, HEIGHT - 126, bar_w, 18))
-            pygame.draw.rect(screen, (240, 200, 70), (WIDTH // 2 - bar_w // 2, HEIGHT - 126, int(bar_w * cable_progress / 100), 18))
+            bar_w = 520
+            pygame.draw.rect(screen, (30, 30, 30), (WIDTH // 2 - bar_w // 2, HEIGHT - 220, bar_w, 30))
+            pygame.draw.rect(screen, (240, 200, 70), (WIDTH // 2 - bar_w // 2, HEIGHT - 220, int(bar_w * cable_progress / 100), 30))
             t = SMALL.render("Appuie sur E pour ouvrir la boite et relier rouge, jaune et bleu", True, (255, 240, 190))
-            screen.blit(t, (WIDTH // 2 - t.get_width() // 2, HEIGHT - 152))
+            screen.blit(t, (WIDTH // 2 - t.get_width() // 2, HEIGHT - 260))
 
     draw_inventory_bar()
 
@@ -1567,9 +1493,9 @@ def draw_game_over():
     t2 = FONT.render("Tu as survecu aux 5 jours... ou presque.", True, (230, 230, 230))
     t3 = SMALL.render("Appuie sur ESC pour quitter.", True, (180, 180, 180))
 
-    screen.blit(t1, (WIDTH // 2 - t1.get_width() // 2, HEIGHT // 2 - 80))
-    screen.blit(t2, (WIDTH // 2 - t2.get_width() // 2, HEIGHT // 2 - 20))
-    screen.blit(t3, (WIDTH // 2 - t3.get_width() // 2, HEIGHT // 2 + 25))
+    screen.blit(t1, (WIDTH // 2 - t1.get_width() // 2, HEIGHT // 2 - 140))
+    screen.blit(t2, (WIDTH // 2 - t2.get_width() // 2, HEIGHT // 2 - 35))
+    screen.blit(t3, (WIDTH // 2 - t3.get_width() // 2, HEIGHT // 2 + 44))
 
 
 def draw_death_screen():
@@ -1584,10 +1510,10 @@ def draw_death_screen():
     restart = FONT.render("Appuie sur ESPACE ou clique pour recommencer au debut.", True, (255, 235, 190))
     hp = SMALL.render("PV : 0 / " + str(MAX_HEALTH), True, (210, 160, 150))
 
-    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 95))
-    screen.blit(reason, (WIDTH // 2 - reason.get_width() // 2, HEIGHT // 2 - 32))
-    screen.blit(hp, (WIDTH // 2 - hp.get_width() // 2, HEIGHT // 2 + 8))
-    screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, HEIGHT // 2 + 58))
+    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 166))
+    screen.blit(reason, (WIDTH // 2 - reason.get_width() // 2, HEIGHT // 2 - 56))
+    screen.blit(hp, (WIDTH // 2 - hp.get_width() // 2, HEIGHT // 2 + 14))
+    screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, HEIGHT // 2 + 101))
 
 
 def draw_loading_screen():
@@ -1607,20 +1533,22 @@ def draw_loading_screen():
         pygame.draw.rect(screen, (shade, shade, shade + 2), (0, y, WIDTH, 42))
 
     title = BIG.render("INITIALISATION", True, (245, 225, 150))
-    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 150))
+    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 261))
 
-    bar = pygame.Rect(WIDTH // 2 - 260, HEIGHT // 2 - 18, 520, 36)
-    pygame.draw.rect(screen, (28, 29, 31), bar, border_radius=8)
-    pygame.draw.rect(screen, (170, 150, 85), bar, 2, border_radius=8)
-    fill = bar.inflate(-8, -8)
-    fill.width = int((bar.width - 16) * progress)
-    pygame.draw.rect(screen, (218, 186, 82), fill, border_radius=6)
+    bar = pygame.Rect(WIDTH // 2 - 400, HEIGHT // 2 - 30, 800, 60)
+    pygame.draw.rect(screen, (28, 29, 31), bar, border_radius=10)
+    pygame.draw.rect(screen, (170, 150, 85), bar, 3, border_radius=10)
+    fill = bar.inflate(-12, -12)
+    fill.width = int((bar.width - 24) * progress)
+    pygame.draw.rect(screen, (218, 186, 82), fill, border_radius=8)
 
     pct = FONT.render(str(int(progress * 100)) + "%", True, (235, 230, 205))
-    screen.blit(pct, (WIDTH // 2 - pct.get_width() // 2, bar.bottom + 18))
+    screen.blit(pct, (WIDTH // 2 - pct.get_width() // 2, bar.bottom + 30))
 
     text = FONT.render(messages[index] + "...", True, (210, 210, 195))
-    screen.blit(text, (WIDTH // 2 - text.get_width() // 2, bar.bottom + 56))
+    screen.blit(text, (WIDTH // 2 - text.get_width() // 2, bar.bottom + 90))
+    skip = SMALL.render("ESPACE pour passer", True, (100, 100, 100))
+    screen.blit(skip, (WIDTH - skip.get_width() - 20, HEIGHT - 30))
 
 
 def draw_intro_cinematic():
@@ -1679,11 +1607,11 @@ def draw_intro_cinematic():
 def menu_rects():
     center_x = WIDTH // 2
     return {
-        "play": pygame.Rect(center_x - 165, 255, 330, 54),
-        "sound": pygame.Rect(center_x - 165, 328, 330, 48),
-        "vol_down": pygame.Rect(center_x - 165, 394, 82, 46),
-        "vol_up": pygame.Rect(center_x + 83, 394, 82, 46),
-        "quit": pygame.Rect(center_x - 165, 468, 330, 48),
+        "play": pygame.Rect(center_x - 165, 444, 330, 94),
+        "sound": pygame.Rect(center_x - 165, 572, 330, 84),
+        "vol_down": pygame.Rect(center_x - 165, 686, 82, 80),
+        "vol_up": pygame.Rect(center_x + 83, 686, 82, 80),
+        "quit": pygame.Rect(center_x - 165, 815, 330, 84),
     }
 
 
@@ -1717,8 +1645,8 @@ def draw_menu():
 
     title = BIG.render("AVANT BACKROOM", True, (245, 222, 142))
     subtitle = FONT.render("Appartement anormal - 5 jours", True, (230, 226, 210))
-    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 96))
-    screen.blit(subtitle, (WIDTH // 2 - subtitle.get_width() // 2, 154))
+    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 167))
+    screen.blit(subtitle, (WIDTH // 2 - subtitle.get_width() // 2, 268))
 
     rects = menu_rects()
     draw_button(rects["play"], "Lancer la partie", mouse_pos, True)
@@ -1731,7 +1659,7 @@ def draw_menu():
     draw_button(rects["vol_down"], "-", mouse_pos)
     draw_button(rects["vol_up"], "+", mouse_pos)
 
-    vol_box = pygame.Rect(WIDTH // 2 - 70, 394, 140, 46)
+    vol_box = pygame.Rect(WIDTH // 2 - 70, 686, 140, 80)
     pygame.draw.rect(screen, (12, 12, 13), vol_box, border_radius=8)
     pygame.draw.rect(screen, (132, 118, 78), vol_box, 2, border_radius=8)
     vol = FONT.render("Volume " + str(int(sound_volume * 100)) + "%", True, (238, 234, 215))
@@ -1816,6 +1744,8 @@ while running:
         elif game_state == "loading":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                game_state = "menu"
 
         elif game_state == "intro":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -1844,7 +1774,7 @@ while running:
 
             if event.type == pygame.MOUSEMOTION and not game_finished and not cable_panel_open and not safe_panel_open:
                 player_a += event.rel[0] * MOUSE_SENSITIVITY
-                look_pitch -= event.rel[1] * 0.65
+                look_pitch -= event.rel[1] * 1.1
                 look_pitch = int(max(-PITCH_LIMIT, min(PITCH_LIMIT, look_pitch)))
 
             if event.type == pygame.KEYDOWN:
