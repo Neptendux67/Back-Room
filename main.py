@@ -79,11 +79,6 @@ def handle_menu_click(pos):
 
 def handle_options_click(pos):
     rects = render.options_rects()
-    if rects["sound"].collidepoint(pos):
-        sounds.sound_enabled = not sounds.sound_enabled
-        sounds.play_sound("click")
-        return
-
     if rects["vol_down"].collidepoint(pos):
         sounds.sound_volume = max(0.0, round(sounds.sound_volume - 0.1, 1))
         sounds.play_sound("click")

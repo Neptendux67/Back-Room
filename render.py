@@ -920,7 +920,6 @@ def menu_rects():
 def options_rects():
     center_x = WIDTH // 2
     return {
-        "sound": pygame.Rect(center_x - 165, 340, 330, 60),
         "vol_down": pygame.Rect(center_x - 165, 430, 82, 60),
         "vol_up": pygame.Rect(center_x + 83, 430, 82, 60),
         "music_vol_down": pygame.Rect(center_x - 165, 540, 82, 60),
@@ -990,11 +989,6 @@ def draw_options_menu():
     screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 170))
 
     rects = options_rects()
-
-    sound_text = "Son : active" if sounds.sound_enabled else "Son : coupe"
-    if not sounds.sound_available:
-        sound_text = "Son : indisponible"
-    draw_button(rects["sound"], sound_text, mouse_pos)
 
     draw_button(rects["vol_down"], "-", mouse_pos)
     draw_button(rects["vol_up"], "+", mouse_pos)
