@@ -291,7 +291,7 @@ def handle_safe_key(event):
 
 def get_interact_prompt():
     if state.day == 5:
-        if state.corridor_exit_open and distance(state.player_x, state.player_y, 2.5, CORRIDOR_LENGTH - 1.5) < 1.2:
+        if state.corridor_exit_open and distance(state.player_x, state.player_y, 1.5, CORRIDOR_LENGTH - 1.5) < 1.2:
             return "Appuie sur E pour sortir"
         return None
     if state.day == 2:
@@ -311,7 +311,7 @@ def get_interact_prompt():
 
 def interact():
     if state.day == 5 and state.corridor_exit_open:
-        door_dist = distance(state.player_x, state.player_y, 2.5, CORRIDOR_LENGTH - 1.5)
+        door_dist = distance(state.player_x, state.player_y, 1.5, CORRIDOR_LENGTH - 1.5)
         if door_dist < 1.2:
             sounds.play_sound("door")
             sounds.stop_ambient_music()
@@ -390,7 +390,7 @@ def next_day():
     state.day += 1
     state.day_timer = DAY_LIMIT
     if state.day == 5:
-        state.player_x = 2.5
+        state.player_x = 1.5
         state.player_y = 1.5
         state.player_a = math.pi / 2
     else:
@@ -414,7 +414,7 @@ def next_day():
         show_message("Jour 4 : coupure de courant. Trouve la boite electrique loin de la sortie.", 300)
     elif state.day == 5:
         state.ending_timer = 0
-        state.monster_x = 2.5
+        state.monster_x = 1.5
         state.monster_y = 0.5
         state.chase_timer = 3.0
         state.stamina = 100

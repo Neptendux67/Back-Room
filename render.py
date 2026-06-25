@@ -465,9 +465,9 @@ def draw_objects(depth_buffer):
         draw_sprite(EXIT_X, EXIT_Y, (70, 115, 160), 0.95, "sortie", "door", depth_buffer)
     else:
         if state.corridor_exit_open:
-            draw_sprite(2.5, CORRIDOR_LENGTH - 1.5, (255, 220, 50), 1.3, "SORTIE - Entre vite !", "door", depth_buffer)
+            draw_sprite(1.5, CORRIDOR_LENGTH - 1.5, (255, 220, 50), 1.3, "SORTIE - Entre vite !", "door", depth_buffer)
         else:
-            draw_sprite(2.5, CORRIDOR_LENGTH - 1.5, (60, 55, 45), 1.1, "porte (verrouillee)", "door", depth_buffer)
+            draw_sprite(1.5, CORRIDOR_LENGTH - 1.5, (60, 55, 45), 1.1, "porte (verrouillee)", "door", depth_buffer)
 
     for window in state.windows:
         draw_sprite(window["x"], window["y"], (160, 200, 235), window["size"], None, "window", depth_buffer)
