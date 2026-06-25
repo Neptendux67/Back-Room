@@ -1,13 +1,13 @@
 from config import DAY_LIMIT, MAX_HEALTH
 
-player_x = 2.0
-player_y = 1.5
-player_a = 1.570796  # math.pi / 2
+player_x = 1.5
+player_y = 9.5
+player_a = 0.0
 look_pitch = 0
 
-day = 5
+day = 1
 day_timer = DAY_LIMIT
-message = "Jour 5 : cours jusqu'au fond du long couloir avant la fin du chrono."
+message = "Jour 1 : explore l'appartement. Un bruit arrive bientot..."
 message_timer = 260
 shake = 0
 j1_event_done = False
