@@ -594,36 +594,81 @@ def draw_3d_player(depth_buffer):
     
     cuboids = [
         # Torso
-        (-0.1, 0.0, 0.12, 0.30, 0.18, 0.10, (235, 180, 30)),
+        (-0.05, 0.0, 0.06, 0.15, 0.09, 0.05, (235, 180, 30)),
         # Helmet
-        (0.35, 0.02, 0.14, 0.15, 0.15, 0.14, (235, 180, 30)),
+        (0.175, 0.01, 0.07, 0.075, 0.075, 0.07, (235, 180, 30)),
         # Visor
-        (0.46, 0.02, 0.16, 0.04, 0.10, 0.07, (20, 30, 50)),
+        (0.23, 0.01, 0.08, 0.02, 0.05, 0.035, (20, 30, 50)),
         # Left Upper Leg
-        (-0.50, -0.08, 0.08, 0.20, 0.08, 0.07, (235, 180, 30)),
+        (-0.25, -0.04, 0.04, 0.10, 0.04, 0.035, (235, 180, 30)),
         # Right Upper Leg
-        (-0.50, 0.08, 0.08, 0.20, 0.08, 0.07, (235, 180, 30)),
+        (-0.25, 0.04, 0.04, 0.10, 0.04, 0.035, (235, 180, 30)),
         # Left Lower Leg
-        (-0.80, -0.10, 0.07, 0.20, 0.07, 0.06, (235, 180, 30)),
+        (-0.40, -0.05, 0.035, 0.10, 0.035, 0.03, (235, 180, 30)),
         # Right Lower Leg
-        (-0.80, 0.10, 0.07, 0.20, 0.07, 0.06, (235, 180, 30)),
+        (-0.40, 0.05, 0.035, 0.10, 0.035, 0.03, (235, 180, 30)),
         # Left Boot
-        (-1.03, -0.10, 0.09, 0.08, 0.07, 0.08, (40, 40, 40)),
+        (-0.515, -0.05, 0.045, 0.04, 0.035, 0.04, (40, 40, 40)),
         # Right Boot
-        (-1.03, 0.10, 0.09, 0.08, 0.07, 0.08, (40, 40, 40)),
+        (-0.515, 0.05, 0.045, 0.04, 0.035, 0.04, (40, 40, 40)),
         # Left Arm
-        (0.0, -0.26, 0.07, 0.20, 0.07, 0.07, (235, 180, 30)),
+        (0.0, -0.13, 0.035, 0.10, 0.035, 0.035, (235, 180, 30)),
         # Right Arm
-        (0.0, 0.26, 0.07, 0.20, 0.07, 0.07, (235, 180, 30)),
+        (0.0, 0.13, 0.035, 0.10, 0.035, 0.035, (235, 180, 30)),
         # Left Glove
-        (0.23, -0.26, 0.07, 0.06, 0.06, 0.06, (40, 40, 40)),
+        (0.115, -0.13, 0.035, 0.03, 0.03, 0.03, (40, 40, 40)),
         # Right Glove
-        (0.23, 0.26, 0.07, 0.06, 0.06, 0.06, (40, 40, 40)),
+        (0.115, 0.13, 0.035, 0.03, 0.03, 0.03, (40, 40, 40)),
     ]
     
     all_faces = []
     for cu, cv, cw, su, sv, sw, color in cuboids:
         faces = make_cuboid_faces(cu, cv, cw, su, sv, sw, color, death_x, death_y, death_a)
+        all_faces.extend(faces)
+        
+    all_faces.sort(key=lambda x: x[0], reverse=True)
+    
+    for depth, pts, color in all_faces:
+        if not pts:
+            continue
+        xs = [p[0] for p in pts]
+        avg_x = int(sum(xs) / len(xs))
+        if 0 <= avg_x < WIDTH:
+            if depth <= depth_buffer[avg_x] + 0.5:
+                pygame.draw.polygon(screen, color, pts)
+        else:
+            pygame.draw.polygon(screen, color, pts)
+
+
+def draw_3d_monster(depth_buffer):
+    from config import screen
+    monster_x = state.monster_x
+    monster_y = state.monster_y
+    monster_a = math.atan2(state.death_pos_y - state.monster_y, state.death_pos_x - state.monster_x)
+    
+    # 3D cuboids representing a sitting slender humanoid entity (scaled 2x smaller)
+    cuboids = [
+        # Torso (slender, vertical)
+        (0.0, 0.0, 0.25, 0.06, 0.08, 0.15, (25, 25, 28)),
+        # Head
+        (0.02, 0.0, 0.46, 0.06, 0.06, 0.06, (18, 18, 20)),
+        # Left Thigh
+        (0.12, -0.06, 0.10, 0.10, 0.04, 0.04, (22, 22, 24)),
+        # Right Thigh
+        (0.12, 0.06, 0.10, 0.10, 0.04, 0.04, (22, 22, 24)),
+        # Left Shin
+        (0.22, -0.06, 0.05, 0.04, 0.04, 0.10, (18, 18, 20)),
+        # Right Shin
+        (0.22, 0.06, 0.05, 0.04, 0.04, 0.10, (18, 18, 20)),
+        # Left Arm
+        (0.06, -0.12, 0.20, 0.04, 0.03, 0.15, (20, 20, 22)),
+        # Right Arm
+        (0.06, 0.12, 0.20, 0.04, 0.03, 0.15, (20, 20, 22)),
+    ]
+    
+    all_faces = []
+    for cu, cv, cw, su, sv, sw, color in cuboids:
+        faces = make_cuboid_faces(cu, cv, cw, su, sv, sw, color, monster_x, monster_y, monster_a)
         all_faces.extend(faces)
         
     all_faces.sort(key=lambda x: x[0], reverse=True)
@@ -686,8 +731,8 @@ def draw_objects(depth_buffer):
             draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
     if state.death_cinematic:
+        draw_3d_monster(depth_buffer)
         draw_3d_player(depth_buffer)
-        draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, None, "monster", depth_buffer)
     elif state.day == 5 and not state.ending_cinematic and state.monster_visible:
         draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
