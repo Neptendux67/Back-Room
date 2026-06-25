@@ -76,4 +76,6 @@ death_timer = 0.0
 death_pos_x = 0.0
 death_pos_y = 0.0
 death_pos_a = 0.0
+camera_z = 0.0
+
 

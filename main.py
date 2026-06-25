@@ -385,14 +385,16 @@ while running:
             orig_py = state.player_y
             orig_pa = state.player_a
             orig_pitch = state.look_pitch
+            orig_cz = getattr(state, "camera_z", 0.0)
             
+            state.camera_z = 0.38
             state.player_x = state.death_pos_x - math.cos(state.death_pos_a) * dist
             state.player_y = state.death_pos_y - math.sin(state.death_pos_a) * dist
             state.player_a = state.death_pos_a
             
-            # Smooth look down tilt
+            # Smooth look down tilt (look further down since camera is elevated)
             look_down_progress = min(1.0, state.death_timer / 1.5)
-            state.look_pitch = int(-180 * look_down_progress)
+            state.look_pitch = int(-260 * look_down_progress)
             
         render.draw_floor_ceiling()
         depth_buffer = render.cast_rays()
@@ -404,6 +406,7 @@ while running:
             state.player_y = orig_py
             state.player_a = orig_pa
             state.look_pitch = orig_pitch
+            state.camera_z = orig_cz
             
             config.screen.blit(temp_surf, (0, 0))
             

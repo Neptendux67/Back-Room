@@ -182,8 +182,10 @@ def cast_rays():
         x_screen = int(ray * WIDTH / RAYS)
         w = int(WIDTH / RAYS) + 1
         x_end = min(WIDTH, x_screen + w)
-        y1 = HEIGHT // 2 - wall_h // 2 + state.look_pitch
-        y2 = y1 + wall_h
+        camera_z = getattr(state, "camera_z", 0.0)
+        horizon = HEIGHT // 2 + state.look_pitch
+        y1 = int(horizon - ((0.5 - camera_z) / (depth + 0.0001)) * HEIGHT)
+        y2 = int(horizon + ((0.5 + camera_z) / (depth + 0.0001)) * HEIGHT)
 
         for sx in range(max(0, x_screen), x_end):
             depth_buffer[sx] = min(depth_buffer[sx], depth)
@@ -354,8 +356,12 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
         sprite_w = max(8, min(WIDTH, int(sprite_h * aspect)))
     else:
         sprite_w = max(8, min(WIDTH, sprite_h // 2))
-
-    y = HEIGHT // 2 - sprite_h // 2 + state.look_pitch
+    horizon = HEIGHT // 2 + state.look_pitch
+    camera_z = getattr(state, "camera_z", 0.0)
+    if shape in ("monster", "player_slumped", "door"):
+        y = int(horizon - (((-0.5 + size - camera_z) / dist) * HEIGHT))
+    else:
+        y = HEIGHT // 2 - sprite_h // 2 + state.look_pitch
     rect = pygame.Rect(screen_x - sprite_w // 2, y, sprite_w, sprite_h)
 
     darkness = 1.0
@@ -507,6 +513,132 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
 
     visible = draw_clipped_sprite(sprite, rect, dist, depth_buffer)
 
+def make_cuboid_faces(cu, cv, cw, su, sv, sw, color, death_x, death_y, death_a):
+    local_corners = [
+        (cu - su, cv - sv, cw - sw),
+        (cu + su, cv - sv, cw - sw),
+        (cu + su, cv + sv, cw - sw),
+        (cu - su, cv + sv, cw - sw),
+        (cu - su, cv - sv, cw + sw),
+        (cu + su, cv - sv, cw + sw),
+        (cu + su, cv + sv, cw + sw),
+        (cu - su, cv + sv, cw + sw),
+    ]
+    
+    proj_corners = []
+    depths = []
+    
+    camera_z = getattr(state, "camera_z", 0.0)
+    cos_a = math.cos(state.player_a)
+    sin_a = math.sin(state.player_a)
+    
+    for lu, lv, lw in local_corners:
+        gx = death_x + lu * math.cos(death_a) - lv * math.sin(death_a)
+        gy = death_y + lu * math.sin(death_a) + lv * math.cos(death_a)
+        gz = -0.5 + lw
+        
+        dx = gx - state.player_x
+        dy = gy - state.player_y
+        
+        rot_x = dx * cos_a + dy * sin_a
+        rot_y = -dx * sin_a + dy * cos_a
+        
+        if rot_x < 0.05:
+            return []
+            
+        screen_x = int(WIDTH // 2 + (rot_y / rot_x) * WIDTH)
+        horizon = HEIGHT // 2 + state.look_pitch
+        screen_y = int(horizon - ((gz - camera_z) / rot_x) * HEIGHT)
+        
+        proj_corners.append((screen_x, screen_y))
+        depths.append(rot_x)
+        
+    faces = [
+        (0, 1, 2, 3), # Bottom
+        (4, 5, 6, 7), # Top
+        (0, 1, 5, 4), # Front
+        (2, 3, 7, 6), # Back
+        (1, 2, 6, 5), # Right
+        (3, 0, 4, 7), # Left
+    ]
+    
+    shading = [0.6, 1.0, 0.75, 0.75, 0.85, 0.85]
+    
+    face_data = []
+    for i, face_indices in enumerate(faces):
+        face_pts = [proj_corners[idx] for idx in face_indices]
+        face_depth = sum(depths[idx] for idx in face_indices) / 4.0
+        
+        c_shade = shading[i]
+        dist_shade = max(0.12, 1.0 - face_depth / MAX_DEPTH * 0.92)
+        if state.day == 4 and not state.power_fixed:
+            dist_shade *= 0.25
+        final_shade = c_shade * dist_shade
+        
+        face_color = (
+            max(0, min(255, int(color[0] * final_shade))),
+            max(0, min(255, int(color[1] * final_shade))),
+            max(0, min(255, int(color[2] * final_shade))),
+        )
+        
+        face_data.append((face_depth, face_pts, face_color))
+        
+    return face_data
+
+
+def draw_3d_player(depth_buffer):
+    from config import screen
+    death_x = state.death_pos_x
+    death_y = state.death_pos_y
+    death_a = state.death_pos_a
+    
+    cuboids = [
+        # Torso
+        (-0.1, 0.0, 0.12, 0.30, 0.18, 0.10, (235, 180, 30)),
+        # Helmet
+        (0.35, 0.02, 0.14, 0.15, 0.15, 0.14, (235, 180, 30)),
+        # Visor
+        (0.46, 0.02, 0.16, 0.04, 0.10, 0.07, (20, 30, 50)),
+        # Left Upper Leg
+        (-0.50, -0.08, 0.08, 0.20, 0.08, 0.07, (235, 180, 30)),
+        # Right Upper Leg
+        (-0.50, 0.08, 0.08, 0.20, 0.08, 0.07, (235, 180, 30)),
+        # Left Lower Leg
+        (-0.80, -0.10, 0.07, 0.20, 0.07, 0.06, (235, 180, 30)),
+        # Right Lower Leg
+        (-0.80, 0.10, 0.07, 0.20, 0.07, 0.06, (235, 180, 30)),
+        # Left Boot
+        (-1.03, -0.10, 0.09, 0.08, 0.07, 0.08, (40, 40, 40)),
+        # Right Boot
+        (-1.03, 0.10, 0.09, 0.08, 0.07, 0.08, (40, 40, 40)),
+        # Left Arm
+        (0.0, -0.26, 0.07, 0.20, 0.07, 0.07, (235, 180, 30)),
+        # Right Arm
+        (0.0, 0.26, 0.07, 0.20, 0.07, 0.07, (235, 180, 30)),
+        # Left Glove
+        (0.23, -0.26, 0.07, 0.06, 0.06, 0.06, (40, 40, 40)),
+        # Right Glove
+        (0.23, 0.26, 0.07, 0.06, 0.06, 0.06, (40, 40, 40)),
+    ]
+    
+    all_faces = []
+    for cu, cv, cw, su, sv, sw, color in cuboids:
+        faces = make_cuboid_faces(cu, cv, cw, su, sv, sw, color, death_x, death_y, death_a)
+        all_faces.extend(faces)
+        
+    all_faces.sort(key=lambda x: x[0], reverse=True)
+    
+    for depth, pts, color in all_faces:
+        if not pts:
+            continue
+        xs = [p[0] for p in pts]
+        avg_x = int(sum(xs) / len(xs))
+        if 0 <= avg_x < WIDTH:
+            if depth <= depth_buffer[avg_x] + 0.5:
+                pygame.draw.polygon(screen, color, pts)
+        else:
+            pygame.draw.polygon(screen, color, pts)
+
 
 def draw_objects(depth_buffer):
     if state.day != 5:
@@ -554,7 +686,7 @@ def draw_objects(depth_buffer):
             draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
     if state.death_cinematic:
-        draw_sprite(state.death_pos_x, state.death_pos_y, (255, 255, 255), 1.25, None, "player_slumped", depth_buffer)
+        draw_3d_player(depth_buffer)
         draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, None, "monster", depth_buffer)
     elif state.day == 5 and not state.ending_cinematic and state.monster_visible:
         draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)

@@ -120,6 +120,7 @@ def reset_game():
     state.chase_timer = 3.0
     state.monster_visible = False
     state.monster_scream_played = False
+    state.camera_z = 0.0
 
 
 def kill_player(reason):
