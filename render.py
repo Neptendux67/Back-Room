@@ -42,23 +42,17 @@ def draw_floor_ceiling():
 
     if state.day == 4 and not state.power_fixed:
         ceiling = (8, 8, 12)
-        floor_base = (9, 60, 80)
+        floor_base = (50, 38, 10)
     else:
         ceiling = (208, 207, 192)
-        floor_base = (37, 150, 190)
+        floor_base = (196, 154, 42)
 
     if state.day == 5:
         ceiling = (168, 158, 108)
-        floor_base = (37, 150, 190)
+        floor_base = (196, 154, 42)
 
     screen.fill(ceiling, (0, 0, WIDTH, max(0, horizon)))
     screen.fill(floor_base, (0, horizon, WIDTH, HEIGHT - horizon))
-
-    for y in range(max(horizon, 0), HEIGHT, 42):
-        pygame.draw.line(screen, (82, 58, 34), (0, y), (WIDTH, y), 1)
-
-    for x in range(0, WIDTH, 167):
-        pygame.draw.line(screen, (105, 72, 39), (x, max(horizon, 0)), (x, HEIGHT), 1)
 
     if state.day != 4 or state.power_fixed:
         for x in range(0, WIDTH, 209):
