@@ -58,7 +58,7 @@ def load_textures():
         mon_path = os.path.join(tex_dir, "Monster-Spritesheet.png")
         mon_surf = pygame.image.load(mon_path).convert_alpha()
         mw, mh = mon_surf.get_width(), mon_surf.get_height()
-        if mw >= mh * 2:
+        if mw > mh:
             MONSTER_FW = mw // 4
             MONSTER_FH = mh
             MONSTER_FRAMES = []
