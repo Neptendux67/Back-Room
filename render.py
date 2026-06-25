@@ -1,34 +1,39 @@
 import math
 import random
+import os
+import numpy as np
 import pygame
+import pygame.surfarray as surfarray
 from config import WIDTH, HEIGHT, FOV, RAYS, MAX_DEPTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, CABLE_COLORS, CORRIDOR_LENGTH
 import state
 import sounds
 import game
 
+TEX_COLS = None
+TEX_W = 32
+TEX_H = 32
+TEX_INDICES = {}
 
-def wall_texture_color(hit_x, hit_y, depth, vertical_hit):
-    shade = max(35, 225 - int(depth * 17))
 
-    if state.day == 4 and not state.power_fixed:
-        shade = max(12, shade // 3)
-
-    base = [shade, int(shade * 0.95), int(shade * 0.78)]
-
-    stripe_coord = hit_y if vertical_hit else hit_x
-    if int(stripe_coord * 7) % 2 == 0:
-        base[0] = int(base[0] * 0.82)
-        base[1] = int(base[1] * 0.86)
-        base[2] = int(base[2] * 0.90)
-
-    if int((hit_x + hit_y) * 3) % 5 == 0:
-        base[0] = min(255, base[0] + 12)
-        base[1] = min(255, base[1] + 10)
-
-    if not vertical_hit:
-        base = [int(c * 0.82) for c in base]
-
-    return tuple(base)
+def load_textures():
+    global TEX_COLS, TEX_W, TEX_H
+    path = os.path.join(os.path.dirname(__file__), "assets", "textures", "Wall-Texture.png")
+    try:
+        tex = pygame.image.load(path).convert()
+        TEX_W, TEX_H = tex.get_width(), tex.get_height()
+        arr = surfarray.array3d(tex).astype(np.uint16)
+        TEX_COLS = [arr[:, i, :].copy() for i in range(TEX_W)]
+        for h in range(1, HEIGHT * 2 + 1):
+            TEX_INDICES[h] = np.linspace(0, TEX_H - 1, h, dtype=np.uint16)
+    except Exception:
+        print("Warning: Could not load wall texture, using fallback")
+        TEX_W, TEX_H = 32, 32
+        tex = pygame.Surface((32, 32))
+        tex.fill((180, 150, 80))
+        arr = surfarray.array3d(tex).astype(np.uint16)
+        TEX_COLS = [arr[:, i, :].copy() for i in range(TEX_W)]
+        for h in range(1, HEIGHT * 2 + 1):
+            TEX_INDICES[h] = np.linspace(0, TEX_H - 1, h, dtype=np.uint16)
 
 
 def draw_floor_ceiling():
@@ -37,14 +42,14 @@ def draw_floor_ceiling():
 
     if state.day == 4 and not state.power_fixed:
         ceiling = (8, 8, 12)
-        floor_base = (20, 18, 17)
+        floor_base = (9, 60, 80)
     else:
         ceiling = (208, 207, 192)
-        floor_base = (118, 83, 49)
+        floor_base = (37, 150, 190)
 
     if state.day == 5:
         ceiling = (168, 158, 108)
-        floor_base = (96, 88, 56)
+        floor_base = (37, 150, 190)
 
     screen.fill(ceiling, (0, 0, WIDTH, max(0, horizon)))
     screen.fill(floor_base, (0, horizon, WIDTH, HEIGHT - horizon))
@@ -65,6 +70,9 @@ def cast_rays():
     from config import screen
     start_angle = state.player_a - FOV / 2
     depth_buffer = [MAX_DEPTH] * WIDTH
+
+    arr = surfarray.pixels3d(screen)
+    cols = TEX_COLS
 
     for ray in range(RAYS):
         ray_angle = start_angle + ray / RAYS * FOV
@@ -93,10 +101,11 @@ def cast_rays():
 
         x_screen = int(ray * WIDTH / RAYS)
         w = int(WIDTH / RAYS) + 1
+        x_end = min(WIDTH, x_screen + w)
         y1 = HEIGHT // 2 - wall_h // 2 + state.look_pitch
         y2 = y1 + wall_h
 
-        for sx in range(max(0, x_screen), min(WIDTH, x_screen + w)):
+        for sx in range(max(0, x_screen), x_end):
             depth_buffer[sx] = depth
 
         shade = max(0.12, 1.0 - depth / MAX_DEPTH * 0.92)
@@ -105,8 +114,29 @@ def cast_rays():
         if not vertical_hit:
             shade *= 0.75
 
-        color = wall_texture_color(hit_x, hit_y, depth, vertical_hit)
-        pygame.draw.rect(screen, color, (x_screen, y1, w, wall_h))
+        if cols is not None:
+            tex_x = int((fy if vertical_hit else fx) * (TEX_W - 1))
+            tex_x = max(0, min(TEX_W - 1, tex_x))
+
+            y_start = y1 if y1 > 0 else 0
+            y_end = y2 if y2 < HEIGHT else HEIGHT
+            draw_h = y_end - y_start
+            if draw_h > 0:
+                lo = y_start - y1
+                hi = lo + draw_h
+                idx = TEX_INDICES[wall_h][lo:hi]
+                out = np.take(cols[tex_x], idx, axis=0)
+                if shade < 0.99:
+                    out = (out * shade).astype(np.uint8)
+                else:
+                    out = out.astype(np.uint8)
+                arr[x_screen:x_end, y_start:y_end, :] = out[np.newaxis, :, :]
+        else:
+            base = [180, 155, 100]
+            if not vertical_hit:
+                base = [int(c * 0.82) for c in base]
+            c = (int(base[0] * shade), int(base[1] * shade), int(base[2] * shade))
+            pygame.draw.rect(screen, c, (x_screen, y1, w, wall_h))
 
         baseboard_h = max(2, min(12, wall_h // 13))
         base_y = min(HEIGHT, y2 - baseboard_h)

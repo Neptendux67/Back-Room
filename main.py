@@ -26,6 +26,8 @@ config.FONT = pygame.font.SysFont("arial", 22)
 config.BIG = pygame.font.SysFont("arial", 46, bold=True)
 config.SMALL = pygame.font.SysFont("arial", 16)
 
+render.load_textures()
+
 pygame.mouse.set_visible(True)
 pygame.event.set_grab(False)
 
