@@ -1296,7 +1296,7 @@ def draw_debug_menu():
     draw_button(rects["day5"], "Jour 5", mouse_pos)
     draw_button(rects["give_key"], "Donner clef", mouse_pos)
     draw_button(rects["tp_exit"], "TP a la sortie", mouse_pos)
-    god_text = "Dieu: ON" if state.player_health == 999 else "Dieu: OFF"
+    god_text = "Admin: ON" if state.player_health == 999 else "Admin: OFF"
     draw_button(rects["god"], god_text, mouse_pos)
     draw_button(rects["close"], "Fermer (ESC)", mouse_pos)
 
@@ -1357,7 +1357,7 @@ def handle_debug_click(pos):
     if rects["god"].collidepoint(pos):
         if state.player_health == 999:
             state.player_health = 100
-            game.show_message("Dieu: OFF", 120)
+            game.show_message("Admin: OFF", 120)
         else:
             state.player_health = 999
-            game.show_message("Dieu: ON", 120)
+            game.show_message("Admin: ON", 120)
