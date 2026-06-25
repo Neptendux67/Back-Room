@@ -1,10 +1,9 @@
 import math
-import random
 import os
 import numpy as np
 import pygame
 import pygame.surfarray as surfarray
-from config import WIDTH, HEIGHT, FOV, RAYS, MAX_DEPTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, CABLE_COLORS, CORRIDOR_LENGTH
+from config import WIDTH, HEIGHT, FOV, RAYS, MAX_DEPTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, CABLE_COLORS, CORRIDOR_LENGTH, TILE_SCALE
 import state
 import sounds
 import game
@@ -20,6 +19,9 @@ _COS_OFF = None
 _SIN_OFF = None
 
 _CEIL_SMALL = None
+_BODY_OVERLAY = None
+_SHADE_PANEL = None
+_PAUSE_BG = None
 
 
 def load_textures():
@@ -87,11 +89,6 @@ def draw_floor_ceiling():
         ceil_color = (25, 22, 15) if state.day == 4 and not state.power_fixed else (185, 175, 130)
         screen.fill(ceil_color, (0, 0, WIDTH, ceil_h))
 
-    if state.day != 4 or state.power_fixed:
-        for x in range(0, WIDTH, 209):
-            pygame.draw.rect(screen, (235, 231, 202), (x, 0, 122, 30))
-            pygame.draw.line(screen, (170, 166, 145), (x, 30), (x + 122, 30), 1)
-
 
 def cast_rays():
     from config import screen
@@ -142,7 +139,7 @@ def cast_rays():
             shade *= 0.75
 
         if cols is not None:
-            tex_x = int((fy if vertical_hit else fx) * (TEX_W - 1))
+            tex_x = int(((fy if vertical_hit else fx) * TILE_SCALE % 1.0) * (TEX_W - 1))
             tex_x = max(0, min(TEX_W - 1, tex_x))
 
             y_start = y1 if y1 > 0 else 0
@@ -484,6 +481,7 @@ def draw_ceiling_code_hint():
 
 
 def draw_player_body(moving):
+    global _BODY_OVERLAY
     from config import screen
     tick = pygame.time.get_ticks() / 1000
     walk = math.sin(tick * (8.0 if moving else 2.0))
@@ -496,7 +494,10 @@ def draw_player_body(moving):
     shoe = color_with_light((32, 31, 34), light)
     sole = color_with_light((86, 83, 78), light)
 
-    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    if _BODY_OVERLAY is None:
+        _BODY_OVERLAY = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    _BODY_OVERLAY.fill((0, 0, 0, 0))
+    overlay = _BODY_OVERLAY
 
     left_hand = (int(WIDTH * 0.27), HEIGHT - 122 + bob)
     right_hand = (int(WIDTH * 0.73), HEIGHT - 117 - bob)
@@ -651,17 +652,30 @@ def draw_ui():
             t = SMALL.render("Appuie sur E pour ouvrir la boite et relier rouge, jaune et bleu", True, (255, 240, 190))
             screen.blit(t, (WIDTH // 2 - t.get_width() // 2, HEIGHT - 260))
 
+    prompt = game.get_interact_prompt()
+    if prompt and not state.cable_panel_open and not state.safe_panel_open:
+        txt = SMALL.render(prompt, True, (255, 245, 210))
+        bx = pygame.Rect(0, 0, txt.get_width() + 40, txt.get_height() + 20)
+        bx.center = (WIDTH // 2, HEIGHT - 170)
+        bg = pygame.Surface(bx.size, pygame.SRCALPHA)
+        bg.fill((0, 0, 0, 180))
+        screen.blit(bg, bx.topleft)
+        pygame.draw.rect(screen, (180, 160, 110), bx, 2, border_radius=8)
+        screen.blit(txt, (bx.centerx - txt.get_width() // 2, bx.centery - txt.get_height() // 2))
+
     draw_inventory_bar()
 
 
 def draw_cable_panel():
+    global _SHADE_PANEL
     from config import screen, FONT, SMALL
     panel, close, left, right = game.cable_panel_rects()
     mouse_pos = pygame.mouse.get_pos()
 
-    shade = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    shade.fill((0, 0, 0, 165))
-    screen.blit(shade, (0, 0))
+    if _SHADE_PANEL is None:
+        _SHADE_PANEL = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    _SHADE_PANEL.fill((0, 0, 0, 165))
+    screen.blit(_SHADE_PANEL, (0, 0))
 
     pygame.draw.rect(screen, (28, 29, 31), panel, border_radius=12)
     pygame.draw.rect(screen, (190, 170, 104), panel, 4, border_radius=12)
@@ -721,10 +735,12 @@ def draw_cable_panel():
 
 
 def draw_safe_panel():
+    global _SHADE_PANEL
     from config import screen, FONT, BIG, SMALL
-    shade = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    shade.fill((0, 0, 0, 170))
-    screen.blit(shade, (0, 0))
+    if _SHADE_PANEL is None:
+        _SHADE_PANEL = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    _SHADE_PANEL.fill((0, 0, 0, 170))
+    screen.blit(_SHADE_PANEL, (0, 0))
 
     panel = pygame.Rect(WIDTH // 2 - 320, HEIGHT // 2 - 240, 640, 480)
     pygame.draw.rect(screen, (25, 27, 30), panel, border_radius=12)
@@ -892,8 +908,8 @@ def draw_intro_cinematic():
         line1 = "Bienvenue dans les Backrooms."
         line2 = ""
     elif t < 7.4:
-        line1 = "Pour survivre, tu devras accomplir des taches."
-        line2 = "Mais tu n'as que 1 minutes pour 5 jours."
+        line1 = "Pour survivre, tu devras accomplir des taches sur 5 jours."
+        line2 = "Mais tu n'as que 1 minutes par jours."
     else:
         line1 = "Voyons si tu es digne"
         line2 = "de t'échappé."
@@ -958,8 +974,8 @@ def draw_menu():
     for x in range(0, WIDTH, 90):
         pygame.draw.line(screen, (62, 48, 30), (x, HEIGHT), (x + 140, 0), 1)
 
-    title = BIG.render("BACKROOM :", True, (245, 222, 142))
-    subtitle = BIG.render("One Minute to Escape", True, (245, 222, 142))
+    title = BIG.render("BACKROOM :", True, (220, 200, 110))
+    subtitle = BIG.render("One Minute to Escape", True, (230, 230, 220))
     screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 167))
     screen.blit(subtitle, (WIDTH // 2 - subtitle.get_width() // 2, 268))
 
@@ -967,9 +983,6 @@ def draw_menu():
     draw_button(rects["play"], "Lancer la partie", mouse_pos, True)
     draw_button(rects["options"], "Options", mouse_pos)
     draw_button(rects["quit"], "Quitter", mouse_pos)
-
-    hint = SMALL.render("Clique sur Lancer la partie. La souris servira ensuite a regarder.", True, (190, 185, 165))
-    screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT - 52))
 
 
 def draw_options_menu():
@@ -1015,3 +1028,80 @@ def draw_options_menu():
     screen.blit(music_label, (WIDTH // 2 - music_label.get_width() // 2, 510))
 
     draw_button(rects["back"], "Retour", mouse_pos)
+
+
+def pause_menu_rects():
+    center_x = WIDTH // 2
+    return {
+        "vol_down": pygame.Rect(center_x - 146, 378, 70, 50),
+        "vol_up": pygame.Rect(center_x + 76, 378, 70, 50),
+        "music_vol_down": pygame.Rect(center_x - 146, 468, 70, 50),
+        "music_vol_up": pygame.Rect(center_x + 76, 468, 70, 50),
+        "resume": pygame.Rect(center_x - 146, 548, 292, 56),
+        "menu": pygame.Rect(center_x - 146, 618, 292, 56),
+    }
+
+
+def save_pause_bg():
+    global _PAUSE_BG
+    from config import screen
+    _PAUSE_BG = screen.copy()
+
+
+def clear_pause_bg():
+    global _PAUSE_BG
+    _PAUSE_BG = None
+
+
+def draw_pause_menu():
+    global _PAUSE_BG
+    from config import screen, FONT, SMALL
+    mouse_pos = pygame.mouse.get_pos()
+
+    if _PAUSE_BG is None:
+        save_pause_bg()
+    bg = _PAUSE_BG
+    small = pygame.transform.scale(bg, (WIDTH // 6, HEIGHT // 6))
+    small = pygame.transform.gaussian_blur(small, 6)
+    bg = pygame.transform.scale(small, (WIDTH, HEIGHT))
+    screen.blit(bg, (0, 0))
+
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 70))
+    screen.blit(overlay, (0, 0))
+
+    panel = pygame.Rect(WIDTH // 2 - 200, HEIGHT // 2 - 260, 400, 520)
+    pygame.draw.rect(screen, (22, 23, 25), panel, border_radius=12)
+    pygame.draw.rect(screen, (190, 170, 104), panel, 3, border_radius=12)
+
+    title = FONT.render("PAUSE", True, (245, 222, 142))
+    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, panel.top + 30))
+
+    rects = pause_menu_rects()
+
+    draw_button(rects["vol_down"], "-", mouse_pos)
+    draw_button(rects["vol_up"], "+", mouse_pos)
+
+    vol_box = pygame.Rect(WIDTH // 2 - 64, 378, 128, 50)
+    pygame.draw.rect(screen, (12, 12, 13), vol_box, border_radius=8)
+    pygame.draw.rect(screen, (132, 118, 78), vol_box, 2, border_radius=8)
+    vol_text = FONT.render("Volume " + str(int(sounds.sound_volume * 100)) + "%", True, (238, 234, 215))
+    screen.blit(vol_text, (vol_box.centerx - vol_text.get_width() // 2, vol_box.centery - vol_text.get_height() // 2))
+
+    eff_label = SMALL.render("Effets sonores", True, (190, 185, 165))
+    screen.blit(eff_label, (WIDTH // 2 - eff_label.get_width() // 2, 355))
+
+    draw_button(rects["music_vol_down"], "-", mouse_pos)
+    draw_button(rects["music_vol_up"], "+", mouse_pos)
+
+    music_box = pygame.Rect(WIDTH // 2 - 64, 468, 128, 50)
+    pygame.draw.rect(screen, (12, 12, 13), music_box, border_radius=8)
+    pygame.draw.rect(screen, (132, 118, 78), music_box, 2, border_radius=8)
+    music_vol_text = FONT.render("Volume " + str(int(sounds.music_volume * 100)) + "%", True, (238, 234, 215))
+    screen.blit(music_vol_text, (music_box.centerx - music_vol_text.get_width() // 2, music_box.centery - music_vol_text.get_height() // 2))
+
+    music_label = SMALL.render("Musique", True, (190, 185, 165))
+    screen.blit(music_label, (WIDTH // 2 - music_label.get_width() // 2, 445))
+
+    draw_button(rects["resume"], "Reprendre", mouse_pos, True)
+    draw_button(rects["menu"], "Menu principal", mouse_pos)

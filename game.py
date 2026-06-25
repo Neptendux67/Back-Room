@@ -1,7 +1,7 @@
 import math
 import random
 import pygame
-from config import DAY_LIMIT, MAX_HEALTH, APARTMENT_MAP, CORRIDOR_MAP, CORRIDOR_LENGTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, MAP_W, MAP_H, FOV
+from config import DAY_LIMIT, MAX_HEALTH, APARTMENT_MAP, CORRIDOR_MAP, CORRIDOR_LENGTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, FOV
 import state
 import sounds
 
@@ -285,6 +285,22 @@ def handle_safe_key(event):
                 show_message("Code faux.", 150)
 
 
+def get_interact_prompt():
+    if state.day == 2:
+        for p in state.paintings:
+            if not p["gone"] and distance(state.player_x, state.player_y, p["x"], p["y"]) < 1.25:
+                return "Appuie sur E pour jeter le tableau"
+    if state.day == 3:
+        if distance(state.player_x, state.player_y, SAFE_X, SAFE_Y) < 1.6:
+            return "Appuie sur E pour ouvrir le coffre"
+        if near_exit() and selected_item() == "Clef":
+            return "Clic droit pour utiliser la clef sur la porte"
+    if state.day == 4:
+        if distance(state.player_x, state.player_y, CABLE_X, CABLE_Y) < 1.6 and not state.power_fixed:
+            return "Appuie sur E pour ouvrir la boite electrique"
+    return None
+
+
 def interact():
     if state.day == 2:
         for p in state.paintings:
@@ -419,6 +435,7 @@ def update_day_events(dt):
         seen = abs(angle_diff(monster_angle, state.player_a)) < (FOV / 2.2) and dist < 9
 
         if dist > 0.2:
+            old_mx, old_my = state.monster_x, state.monster_y
             if seen:
                 state.monster_x -= dx / dist * 0.022
                 state.monster_y -= dy / dist * 0.022
@@ -426,9 +443,8 @@ def update_day_events(dt):
                 state.monster_x += dx / dist * 0.010
                 state.monster_y += dy / dist * 0.010
 
-        if wall_at(state.monster_x, state.monster_y):
-            state.monster_x = max(1.5, min(MAP_W - 2, state.monster_x))
-            state.monster_y = max(1.5, min(MAP_H - 2, state.monster_y))
+            if wall_at(state.monster_x, state.monster_y):
+                state.monster_x, state.monster_y = old_mx, old_my
 
         state.heartbeat = max(0, 6 - dist)
 
@@ -439,9 +455,6 @@ def update_day_events(dt):
             reset_cable_task()
             state.monster_x = 12.5
             state.monster_y = 1.5
-
-    if state.day == 5 and is_exit(state.player_x, state.player_y):
-        state.game_finished = True
 
     if state.day == 5 and not state.corridor_exit_open and state.day_timer <= 10.0:
         state.corridor_exit_open = True

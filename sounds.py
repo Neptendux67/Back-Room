@@ -9,8 +9,8 @@ sounds = {}
 foot_channel = None
 foot_is_playing = False
 sound_enabled = True
-sound_volume = 0.6
-music_volume = 0.5
+sound_volume = 1.0
+music_volume = 1.0
 
 AUDIO_FILES = {
     "click": "click.wav",
@@ -66,6 +66,7 @@ def _fallback_sounds():
     sounds["bang"] = make_tone(75, 650, 0.65, 55)
     sounds["interact"] = make_tone(360, 120, 0.25)
     sounds["repair"] = make_tone(720, 280, 0.35, 20)
+    sounds["door"] = make_tone(180, 350, 0.4, 25)
 
 
 def load_sounds():

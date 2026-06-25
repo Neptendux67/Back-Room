@@ -40,6 +40,7 @@ def enter_menu():
 def start_game(reset=True):
     if reset:
         game.reset_game()
+    render.clear_pause_bg()
     state.game_state = "playing"
     sounds.stop_menu_music()
     pygame.mouse.set_visible(False)
@@ -50,6 +51,7 @@ def start_game(reset=True):
 
 def start_intro():
     game.reset_game()
+    render.clear_pause_bg()
     state.intro_timer = 0.0
     state.game_state = "intro"
     pygame.mouse.set_visible(False)
@@ -107,6 +109,44 @@ def handle_options_click(pos):
         return
 
 
+def handle_pause_click(pos):
+    rects = render.pause_menu_rects()
+    if rects["resume"].collidepoint(pos):
+        render.clear_pause_bg()
+        state.game_state = "playing"
+        pygame.mouse.set_visible(False)
+        pygame.event.set_grab(True)
+        pygame.mouse.get_rel()
+        sounds.play_sound("click")
+        return
+
+    if rects["vol_down"].collidepoint(pos):
+        sounds.sound_volume = max(0.0, round(sounds.sound_volume - 0.1, 1))
+        sounds.play_sound("click")
+        return
+
+    if rects["vol_up"].collidepoint(pos):
+        sounds.sound_volume = min(1.0, round(sounds.sound_volume + 0.1, 1))
+        sounds.play_sound("click")
+        return
+
+    if rects["music_vol_down"].collidepoint(pos):
+        sounds.music_volume = max(0.0, round(sounds.music_volume - 0.1, 1))
+        sounds.play_sound("click")
+        return
+
+    if rects["music_vol_up"].collidepoint(pos):
+        sounds.music_volume = min(1.0, round(sounds.music_volume + 0.1, 1))
+        sounds.play_sound("click")
+        return
+
+    if rects["menu"].collidepoint(pos):
+        render.clear_pause_bg()
+        sounds.play_sound("click")
+        enter_menu()
+        return
+
+
 sounds.load_sounds()
 
 running = True
@@ -144,6 +184,16 @@ while running:
             if event.type == pygame.KEYDOWN and event.key in (pygame.K_SPACE, pygame.K_RETURN):
                 start_game(reset=False)
 
+        elif state.game_state == "paused":
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                render.clear_pause_bg()
+                state.game_state = "playing"
+                pygame.mouse.set_visible(False)
+                pygame.event.set_grab(True)
+                pygame.mouse.get_rel()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                handle_pause_click(event.pos)
+
         elif state.game_state == "dead":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 running = False
@@ -179,7 +229,10 @@ while running:
                     elif state.safe_panel_open:
                         game.close_safe_panel()
                     else:
-                        running = False
+                        state.game_state = "paused"
+                        render.save_pause_bg()
+                        pygame.mouse.set_visible(True)
+                        pygame.event.set_grab(False)
 
                 if event.key == pygame.K_e and state.cable_panel_open:
                     game.close_cable_panel()
@@ -224,6 +277,11 @@ while running:
 
     if state.game_state == "dead":
         render.draw_death_screen()
+        pygame.display.flip()
+        continue
+
+    if state.game_state == "paused":
+        render.draw_pause_menu()
         pygame.display.flip()
         continue
 
