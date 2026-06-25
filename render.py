@@ -1110,3 +1110,108 @@ def draw_pause_menu():
 
     draw_button(rects["resume"], "Reprendre", mouse_pos, True)
     draw_button(rects["menu"], "Menu principal", mouse_pos)
+
+
+def debug_menu_rects():
+    center_x = WIDTH // 2
+    return {
+        "day1": pygame.Rect(center_x - 240, 230, 150, 44),
+        "day2": pygame.Rect(center_x - 75, 230, 150, 44),
+        "day3": pygame.Rect(center_x + 90, 230, 150, 44),
+        "day4": pygame.Rect(center_x - 240, 290, 150, 44),
+        "day5": pygame.Rect(center_x - 75, 290, 150, 44),
+        "give_key": pygame.Rect(center_x + 90, 290, 150, 44),
+        "tp_exit": pygame.Rect(center_x - 160, 360, 320, 44),
+        "god": pygame.Rect(center_x - 160, 420, 320, 44),
+        "close": pygame.Rect(center_x - 160, 500, 320, 44),
+    }
+
+
+def draw_debug_menu():
+    from config import screen, FONT, SMALL
+    mouse_pos = pygame.mouse.get_pos()
+
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 160))
+    screen.blit(overlay, (0, 0))
+
+    panel = pygame.Rect(WIDTH // 2 - 260, 140, 520, 430)
+    pygame.draw.rect(screen, (22, 23, 25), panel, border_radius=12)
+    pygame.draw.rect(screen, (200, 180, 80), panel, 3, border_radius=12)
+
+    title = FONT.render("MENU DEBUG", True, (245, 222, 142))
+    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, panel.top + 18))
+
+    pos = SMALL.render(f"Position: {state.player_x:.2f}, {state.player_y:.2f}  Jour: {state.day}", True, (190, 185, 165))
+    screen.blit(pos, (WIDTH // 2 - pos.get_width() // 2, panel.top + 55))
+
+    rects = debug_menu_rects()
+    draw_button(rects["day1"], "Jour 1", mouse_pos)
+    draw_button(rects["day2"], "Jour 2", mouse_pos)
+    draw_button(rects["day3"], "Jour 3", mouse_pos)
+    draw_button(rects["day4"], "Jour 4", mouse_pos)
+    draw_button(rects["day5"], "Jour 5", mouse_pos)
+    draw_button(rects["give_key"], "Donner clef", mouse_pos)
+    draw_button(rects["tp_exit"], "TP a la sortie", mouse_pos)
+    god_text = "Dieu: ON" if state.player_health == 999 else "Dieu: OFF"
+    draw_button(rects["god"], god_text, mouse_pos)
+    draw_button(rects["close"], "Fermer (ESC)", mouse_pos)
+
+
+def handle_debug_click(pos):
+    import game
+    from config import CORRIDOR_LENGTH, EXIT_X, EXIT_Y
+
+    rects = debug_menu_rects()
+    if rects["close"].collidepoint(pos):
+        state.debug_menu_open = False
+        if state.game_state == "playing":
+            pygame.mouse.set_visible(False)
+            pygame.event.set_grab(True)
+            pygame.mouse.get_rel()
+        return
+
+    day_map = {
+        "day1": 1, "day2": 2, "day3": 3, "day4": 4, "day5": 5,
+    }
+    for key, d in day_map.items():
+        if rects[key].collidepoint(pos):
+            state.day = d
+            state.day_timer = 60.0
+            state.game_finished = False
+            state.ending_cinematic = False
+            state.corridor_exit_open = False
+            if d == 5:
+                state.player_x = 2.5
+                state.player_y = 1.5
+                state.player_a = math.pi / 2
+            else:
+                state.player_x = 1.5
+                state.player_y = 9.5
+                state.player_a = 0.0
+            state.stuck = False
+            state.look_pitch = 0
+            game.show_message(f"Teleporte au jour {d}", 120)
+            return
+
+    if rects["give_key"].collidepoint(pos):
+        state.inventory_slots[0] = "Clef"
+        game.show_message("Clef ajoutee a l'inventaire", 120)
+        return
+
+    if rects["tp_exit"].collidepoint(pos):
+        if state.day == 5:
+            state.player_y = CORRIDOR_LENGTH - 2.5
+        else:
+            state.player_x = EXIT_X - 1.5
+            state.player_y = EXIT_Y
+        game.show_message("TP a la sortie", 120)
+        return
+
+    if rects["god"].collidepoint(pos):
+        if state.player_health == 999:
+            state.player_health = 100
+            game.show_message("Dieu: OFF", 120)
+        else:
+            state.player_health = 999
+            game.show_message("Dieu: ON", 120)

@@ -271,6 +271,11 @@ while running:
                 if event.key == pygame.K_e and not state.cable_panel_open and not state.safe_panel_open:
                     game.interact()
 
+    if state.debug_menu_open:
+        render.draw_debug_menu()
+        pygame.display.flip()
+        continue
+
     if state.game_state == "loading":
         state.loading_timer += dt
         if state.loading_timer >= config.LOADING_DURATION:
@@ -363,6 +368,9 @@ while running:
             render.draw_cable_panel()
         if state.safe_panel_open:
             render.draw_safe_panel()
+
+    if state.debug_menu_open:
+        render.draw_debug_menu()
 
     pygame.display.flip()
 
