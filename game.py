@@ -326,18 +326,25 @@ def interact():
 
     if state.day == 2:
         shredder_dist = distance(state.player_x, state.player_y, SHREDDER_X, SHREDDER_Y)
-        if shredder_dist < 1.2 and selected_item() == "Tableau":
-            state.inventory_slots[state.selected_inventory] = None
-            for p in state.paintings:
-                if p["gone"] and not p["shredded"]:
-                    p["shredded"] = True
-                    break
-            remaining = sum(1 for p in state.paintings if not p["shredded"])
-            if remaining == 0:
-                show_message("Tous les tableaux sont detruits. Va a la sortie !", 300)
+        if shredder_dist < 1.2:
+            shredded_any = False
+            for i in range(len(state.inventory_slots)):
+                if state.inventory_slots[i] == "Tableau":
+                    state.inventory_slots[i] = None
+                    for p in state.paintings:
+                        if p["gone"] and not p["shredded"]:
+                            p["shredded"] = True
+                            shredded_any = True
+                            break
+            if shredded_any:
+                remaining = sum(1 for p in state.paintings if not p["shredded"])
+                if remaining == 0:
+                    show_message("Tous les tableaux sont detruits. Va a la sortie !", 300)
+                else:
+                    show_message(f"Tableaux broyes. Il en reste {remaining} a detruire.", 180)
+                sounds.play_sound("interact")
             else:
-                show_message(f"Tableau broye. Il en reste {remaining}.", 180)
-            sounds.play_sound("interact")
+                show_message("Tu n'as pas de tableau a broyer.", 120)
             return
 
         for p in state.paintings:
