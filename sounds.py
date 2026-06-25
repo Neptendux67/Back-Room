@@ -18,7 +18,7 @@ AUDIO_FILES = {
     "interact": "interact.wav",
     "repair": "repair.wav",
     "electricite": "electricity.wav",
-    "door": "door.wav",
+    "door": "door-opening.wav",
     "clef": "key-collect.wav",
     "foot": "footsteps.wav",
     "ending": "ending.wav",

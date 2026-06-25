@@ -302,6 +302,27 @@ def get_interact_prompt():
 
 
 def interact():
+    if state.day == 5 and state.corridor_exit_open:
+        door_dist = distance(state.player_x, state.player_y, 2.5, CORRIDOR_LENGTH - 1.5)
+        if door_dist < 1.2:
+            sounds.play_sound("door")
+            state.ending_cinematic = True
+            state.ending_timer = 0.0
+            state.game_finished = True
+            sounds.play_sound("ending")
+            return
+
+    if near_exit():
+        if state.day == 3:
+            if selected_item() == "Clef":
+                sounds.play_sound("door")
+                next_day()
+            else:
+                show_message("La porte est verrouillee. Selectionne la clef et fais clic droit.", 220)
+        else:
+            check_exit()
+        return
+
     if state.day == 2:
         for p in state.paintings:
             if not p["gone"] and distance(state.player_x, state.player_y, p["x"], p["y"]) < 1.25:
@@ -327,13 +348,13 @@ def use_selected_item():
     if state.day == 3 and near_exit():
         if selected_item() == "Clef":
             show_message("Tu ouvres la porte avec la clef.", 180)
+            sounds.play_sound("door")
             next_day()
         else:
             show_message("La porte est verrouillee. Selectionne la clef et fais clic droit.", 220)
 
 
 def next_day():
-    sounds.play_sound("door")
     state.day += 1
     state.day_timer = DAY_LIMIT
     if state.day == 5:
@@ -361,6 +382,8 @@ def next_day():
         show_message("Jour 4 : coupure de courant. Trouve la boite electrique loin de la sortie.", 300)
     elif state.day == 5:
         state.ending_timer = 0
+        state.monster_x = 2.5
+        state.monster_y = 0.5
         show_message("Jour 5 : cours jusqu'au fond du long couloir avant la fin du chrono.", 320)
     else:
         state.game_finished = True
@@ -372,19 +395,22 @@ def check_exit():
 
     if state.day == 1:
         if state.j1_event_done:
+            sounds.play_sound("door")
             next_day()
         else:
             show_message("Quelque chose te retient. Attends...")
     elif state.day == 2:
         if all(p["gone"] for p in state.paintings):
+            sounds.play_sound("door")
             next_day()
         else:
             show_message("Impossible de partir : les tableaux bougent encore.")
     elif state.day == 3:
         if not state.stuck:
-            show_message("Porte verrouillee. Trouve la clef, selectionne-la, puis clic droit.", 220)
+            show_message("Porte verrouillee. Trouve la clef, selectionne-la, puis E.", 220)
     elif state.day == 4:
         if state.power_fixed:
+            sounds.play_sound("door")
             next_day()
         else:
             show_message("Il faut reparer le courant avant de partir.")
@@ -461,10 +487,14 @@ def update_day_events(dt):
         show_message("Une porte de sortie apparait au fond ! Cours !", 300)
         state.shake = 18
 
-    if state.day == 5 and state.corridor_exit_open and not state.ending_cinematic:
-        door_dist = distance(state.player_x, state.player_y, 2.5, CORRIDOR_LENGTH - 1.5)
-        if door_dist < 1.2:
-            state.ending_cinematic = True
-            state.ending_timer = 0.0
-            state.game_finished = True
-            sounds.play_sound("ending")
+    if state.day == 5 and not state.ending_cinematic:
+        dy = state.player_y - state.monster_y
+        dist = abs(dy)
+        if dist > 0.2:
+            speed = 0.075
+            state.monster_y += math.copysign(speed, dy)
+            if wall_at(state.monster_x, state.monster_y):
+                state.monster_y -= math.copysign(speed, dy)
+        state.heartbeat = max(0, 6 - dist)
+        if dist < 0.55:
+            kill_player("Le monstre t'a rattrape. Tu recommences depuis le debut.")

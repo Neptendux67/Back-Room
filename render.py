@@ -10,6 +10,9 @@ import game
 
 TEX_COLS = None
 TEX_SURF = None
+MONSTER_FRAMES = None
+MONSTER_FW = 48
+MONSTER_FH = 64
 TEX_W = 32
 TEX_H = 32
 TEX_INDICES = {}
@@ -22,7 +25,7 @@ _PAUSE_BG = None
 
 
 def load_textures():
-    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF
+    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF, MONSTER_FRAMES
     tex_dir = os.path.join(os.path.dirname(__file__), "assets", "textures")
     path = os.path.join(tex_dir, "Wall-Texture.png")
     try:
@@ -47,6 +50,18 @@ def load_textures():
     off = np.arange(WIDTH, dtype=np.float32) / WIDTH * FOV - FOV / 2
     _COS_OFF = np.cos(off)
     _SIN_OFF = np.sin(off)
+
+    try:
+        mon_path = os.path.join(tex_dir, "Monster-Spritesheet.png")
+        mon_surf = pygame.image.load(mon_path).convert_alpha()
+        mw, mh = mon_surf.get_width(), mon_surf.get_height()
+        nframes = mw // MONSTER_FW
+        MONSTER_FRAMES = []
+        for i in range(nframes):
+            frame = mon_surf.subsurface((i * MONSTER_FW, 0, MONSTER_FW, MONSTER_FH))
+            MONSTER_FRAMES.append(frame)
+    except Exception:
+        MONSTER_FRAMES = None
 
 
 def draw_floor_ceiling():
@@ -355,6 +370,19 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
         pygame.draw.rect(sprite, c, (4, 0, rect.width - 8, rect.height))
         pygame.draw.rect(sprite, (38, 52, 66), (4, 0, rect.width - 8, rect.height), 3)
         pygame.draw.circle(sprite, (230, 210, 90), (rect.width - 14, rect.height // 2), 4)
+    elif shape == "monster":
+        if MONSTER_FRAMES:
+            tick = pygame.time.get_ticks() / 1000
+            frame_idx = int(tick * 6) % len(MONSTER_FRAMES)
+            frame = MONSTER_FRAMES[frame_idx]
+            scaled = pygame.transform.scale(frame, (rect.width, rect.height))
+            if darkness < 1.0:
+                dark = pygame.Surface(scaled.get_size(), pygame.SRCALPHA)
+                dark.fill((0, 0, 0, int((1.0 - darkness) * 255)))
+                scaled.blit(dark, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
+            sprite.blit(scaled, (0, 0))
+        else:
+            pygame.draw.rect(sprite, (10, 10, 12), (0, 0, rect.width, rect.height))
     else:
         pygame.draw.rect(sprite, c, (0, 0, rect.width, rect.height))
         pygame.draw.rect(sprite, (35, 30, 25), (0, 0, rect.width, rect.height), 2)
@@ -427,7 +455,10 @@ def draw_objects(depth_buffer):
     if state.day == 4:
         draw_sprite(CABLE_X, CABLE_Y, (230, 190, 55), 0.9, "boite electrique", "cable_box", depth_buffer)
         if not state.power_fixed:
-            draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "rect", depth_buffer)
+            draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
+
+    if state.day == 5 and not state.ending_cinematic:
+        draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
 
 def draw_crosshair():
@@ -614,7 +645,7 @@ def draw_ui():
         pygame.draw.rect(screen, (50, 50, 50), (WIDTH // 2 - bar_w // 2, HEIGHT // 2 - 100, bar_w, 34))
         pygame.draw.rect(screen, (255, 70, 70), (WIDTH // 2 - bar_w // 2, HEIGHT // 2 - 100, int(bar_w * state.stuck_clicks / 18), 34))
 
-    if state.day == 4 and not state.power_fixed:
+    if (state.day == 4 and not state.power_fixed) or (state.day == 5 and not state.ending_cinematic):
         alpha = max(40, min(180, int(220 - state.heartbeat * 40)))
         red = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         red.fill((80, 0, 0, alpha // 3))

@@ -307,7 +307,6 @@ while running:
                 game.try_move(-math.sin(state.player_a) * speed, math.cos(state.player_a) * speed)
 
         sounds.update_footsteps(moving_now)
-        game.check_exit()
 
     game.update_day_events(dt)
 
