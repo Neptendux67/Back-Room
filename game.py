@@ -150,10 +150,13 @@ def kill_player(reason):
     state.death_pos_y = state.player_y
     state.death_pos_a = state.player_a
     
-    # Place the monster right next to the player's body
-    state.monster_x = state.player_x + math.cos(state.player_a + math.pi / 4.0) * 0.45
-    state.monster_y = state.player_y + math.sin(state.player_a + math.pi / 4.0) * 0.45
-    state.monster_visible = True
+    if state.day == 5:
+        # Place the monster right next to the player's body
+        state.monster_x = state.player_x + math.cos(state.player_a + math.pi / 4.0) * 0.45
+        state.monster_y = state.player_y + math.sin(state.player_a + math.pi / 4.0) * 0.45
+        state.monster_visible = True
+    else:
+        state.monster_visible = False
     
     sounds.play_sound("bang")
 

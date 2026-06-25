@@ -718,7 +718,7 @@ def draw_3d_monster(depth_buffer):
 
 def draw_objects(depth_buffer):
     if state.day != 5:
-        draw_sprite(EXIT_X, EXIT_Y, (70, 115, 160), 0.95, "sortie", "door", depth_buffer)
+        draw_sprite(EXIT_X, EXIT_Y, (170, 140, 25), 0.95, "sortie", "door", depth_buffer)
     else:
         if state.corridor_exit_open:
             draw_sprite(2.0, CORRIDOR_LENGTH - 1.5, (255, 220, 50), 1.3, "SORTIE - Entre vite !", "door", depth_buffer)
@@ -762,7 +762,8 @@ def draw_objects(depth_buffer):
             draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
     if state.death_cinematic:
-        draw_3d_monster(depth_buffer)
+        if state.day == 5:
+            draw_3d_monster(depth_buffer)
         draw_3d_player(depth_buffer)
     elif state.day == 5 and not state.ending_cinematic and state.monster_visible:
         draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
