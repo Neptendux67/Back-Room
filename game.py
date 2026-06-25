@@ -568,11 +568,13 @@ def update_day_events(dt):
         if dist > 0.2:
             old_mx, old_my = state.monster_x, state.monster_y
             if seen:
-                state.monster_x -= dx / dist * 0.022
-                state.monster_y -= dy / dist * 0.022
+                m_spd = 1.32 * dt
+                state.monster_x -= dx / dist * m_spd
+                state.monster_y -= dy / dist * m_spd
             else:
-                state.monster_x += dx / dist * 0.010
-                state.monster_y += dy / dist * 0.010
+                m_spd = 0.6 * dt
+                state.monster_x += dx / dist * m_spd
+                state.monster_y += dy / dist * m_spd
 
             if wall_at(state.monster_x, state.monster_y):
                 state.monster_x, state.monster_y = old_mx, old_my
@@ -613,7 +615,7 @@ def update_day_events(dt):
                 if state.monster_visible:
                     # Monster moves at the same speed as the player
                     from config import WALK_SPEED, SPRINT_SPEED
-                    m_speed = SPRINT_SPEED if state.is_sprinting else WALK_SPEED
+                    m_speed = (SPRINT_SPEED if state.is_sprinting else WALK_SPEED) * dt
                     dy = state.player_y - state.monster_y
                     dist = abs(dy)
                     if dist > 0.2:

@@ -327,9 +327,9 @@ while running:
     if not state.game_finished:
         if state.day == 5:
             state.is_sprinting = (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) and state.stamina > 0
-            speed = 0.090 if state.is_sprinting else 0.050
+            speed = config.SPRINT_SPEED if state.is_sprinting else config.WALK_SPEED
         else:
-            speed = 0.050
+            speed = config.WALK_SPEED
 
         if not state.stuck and not state.cable_panel_open and not state.safe_panel_open and not state.death_cinematic:
             forward = keys[pygame.K_w] or keys[pygame.K_z]
@@ -337,15 +337,16 @@ while running:
             left = keys[pygame.K_a] or keys[pygame.K_q]
             right = keys[pygame.K_d]
             moving_now = forward or backward or left or right
+            s = speed * dt
 
             if forward:
-                game.try_move(math.cos(state.player_a) * speed, math.sin(state.player_a) * speed)
+                game.try_move(math.cos(state.player_a) * s, math.sin(state.player_a) * s)
             if backward:
-                game.try_move(-math.cos(state.player_a) * speed, -math.sin(state.player_a) * speed)
+                game.try_move(-math.cos(state.player_a) * s, -math.sin(state.player_a) * s)
             if left:
-                game.try_move(math.sin(state.player_a) * speed, -math.cos(state.player_a) * speed)
+                game.try_move(math.sin(state.player_a) * s, -math.cos(state.player_a) * s)
             if right:
-                game.try_move(-math.sin(state.player_a) * speed, math.cos(state.player_a) * speed)
+                game.try_move(-math.sin(state.player_a) * s, math.cos(state.player_a) * s)
 
         sounds.update_footsteps(moving_now)
 
