@@ -10,16 +10,25 @@ import sounds
 import game
 
 TEX_COLS = None
+TEX_SURF = None
+TEX_SKY_DATA = None
 TEX_W = 32
 TEX_H = 32
 TEX_INDICES = {}
 
+_COS_OFF = None
+_SIN_OFF = None
+
+_CEIL_SMALL = None
+
 
 def load_textures():
-    global TEX_COLS, TEX_W, TEX_H
-    path = os.path.join(os.path.dirname(__file__), "assets", "textures", "Wall-Texture.png")
+    global TEX_COLS, TEX_SURF, TEX_SKY, TEX_SKY_DATA, TEX_W, TEX_H, _COS_OFF, _SIN_OFF
+    tex_dir = os.path.join(os.path.dirname(__file__), "assets", "textures")
+    path = os.path.join(tex_dir, "Wall-Texture.png")
     try:
         tex = pygame.image.load(path).convert()
+        TEX_SURF = tex
         TEX_W, TEX_H = tex.get_width(), tex.get_height()
         arr = surfarray.array3d(tex).astype(np.uint16)
         TEX_COLS = [arr[:, i, :].copy() for i in range(TEX_W)]
@@ -30,29 +39,55 @@ def load_textures():
         TEX_W, TEX_H = 32, 32
         tex = pygame.Surface((32, 32))
         tex.fill((180, 150, 80))
+        TEX_SURF = tex
         arr = surfarray.array3d(tex).astype(np.uint16)
         TEX_COLS = [arr[:, i, :].copy() for i in range(TEX_W)]
         for h in range(1, HEIGHT * 2 + 1):
             TEX_INDICES[h] = np.linspace(0, TEX_H - 1, h, dtype=np.uint16)
+
+    ceil_path = os.path.join(tex_dir, "Ceilling-Texture.png")
+    try:
+        ceil_tex = pygame.image.load(ceil_path).convert()
+        TEX_SKY_DATA = surfarray.array3d(ceil_tex).astype(np.uint16)
+        ceil_w, ceil_h = ceil_tex.get_width(), ceil_tex.get_height()
+        TEX_SKY = pygame.Surface((WIDTH, HEIGHT))
+        for ty in range(0, HEIGHT, ceil_h):
+            for tx in range(0, WIDTH, ceil_w):
+                TEX_SKY.blit(ceil_tex, (tx, ty))
+    except Exception:
+        print("Warning: Could not load ceiling texture, using fallback")
+        fallback = pygame.Surface((32, 32))
+        fallback.fill((180, 150, 80))
+        TEX_SKY_DATA = surfarray.array3d(fallback).astype(np.uint16)
+        TEX_SKY = pygame.Surface((WIDTH, HEIGHT))
+        for ty in range(0, HEIGHT, 32):
+            for tx in range(0, WIDTH, 32):
+                TEX_SKY.blit(fallback, (tx, ty))
+
+    off = np.arange(WIDTH, dtype=np.float32) / WIDTH * FOV - FOV / 2
+    _COS_OFF = np.cos(off)
+    _SIN_OFF = np.sin(off)
+
+    global _CEIL_SMALL
+    _CEIL_SMALL = pygame.Surface((WIDTH // 4, 1))
 
 
 def draw_floor_ceiling():
     from config import screen
     horizon = int(HEIGHT // 2 + state.look_pitch)
 
+    floor_base = (200, 180, 110)
     if state.day == 4 and not state.power_fixed:
-        ceiling = (8, 8, 12)
         floor_base = (50, 45, 28)
-    else:
-        ceiling = (208, 207, 192)
-        floor_base = (200, 180, 110)
 
-    if state.day == 5:
-        ceiling = (168, 158, 108)
-        floor_base = (200, 180, 110)
-
-    screen.fill(ceiling, (0, 0, WIDTH, max(0, horizon)))
     screen.fill(floor_base, (0, horizon, WIDTH, HEIGHT - horizon))
+
+    ceil_h = max(0, horizon)
+    if ceil_h > 0:
+        ceil_color = (25, 22, 15) if state.day == 4 and not state.power_fixed else (185, 175, 130)
+        screen.fill(ceil_color, (0, 0, WIDTH, ceil_h))
+        ceil_color = (25, 22, 15) if state.day == 4 and not state.power_fixed else (185, 175, 130)
+        screen.fill(ceil_color, (0, 0, WIDTH, ceil_h))
 
     if state.day != 4 or state.power_fixed:
         for x in range(0, WIDTH, 209):
