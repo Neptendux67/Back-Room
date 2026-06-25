@@ -322,7 +322,11 @@ while running:
     keys = pygame.key.get_pressed()
 
     if not state.game_finished:
-        speed = 0.085 if state.day == 5 else 0.050
+        if state.day == 5:
+            state.is_sprinting = (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) and state.stamina > 0
+            speed = 0.090 if state.is_sprinting else 0.050
+        else:
+            speed = 0.050
 
         if not state.stuck and not state.cable_panel_open and not state.safe_panel_open:
             forward = keys[pygame.K_w] or keys[pygame.K_z]

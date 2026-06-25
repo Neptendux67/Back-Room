@@ -66,3 +66,5 @@ death_message = ""
 debug_input = ""
 debug_menu_open = False
 chase_timer = 0.0
+stamina = 100
+is_sprinting = False

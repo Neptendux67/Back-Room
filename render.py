@@ -664,6 +664,15 @@ def draw_ui():
             t = SMALL.render("Appuie sur E pour ouvrir la boite et relier rouge, jaune et bleu", True, (255, 240, 190))
             screen.blit(t, (WIDTH // 2 - t.get_width() // 2, HEIGHT - 260))
 
+    if state.day == 5 and not state.ending_cinematic:
+        bar_w, bar_h = 216, 20
+        sx, sy = WIDTH // 2 - bar_w // 2, HEIGHT - 56
+        pygame.draw.rect(screen, (20, 20, 25), (sx, sy, bar_w, bar_h), border_radius=5)
+        fill = int(bar_w * state.stamina / 100)
+        col = (70, 200, 220) if state.stamina > 30 else (220, 180, 60) if state.stamina > 15 else (220, 60, 60)
+        pygame.draw.rect(screen, col, (sx, sy, fill, bar_h), border_radius=5)
+        pygame.draw.rect(screen, (180, 180, 160), (sx, sy, bar_w, bar_h), 2, border_radius=5)
+
     prompt = game.get_interact_prompt()
     if prompt and not state.cable_panel_open and not state.safe_panel_open:
         txt = SMALL.render(prompt, True, (255, 245, 210))

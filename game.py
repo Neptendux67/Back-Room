@@ -109,6 +109,8 @@ def reset_game():
     state.death_message = ""
     state.corridor_exit_open = False
     state.ending_cinematic = False
+    state.stamina = 100
+    state.is_sprinting = False
 
 
 def kill_player(reason):
@@ -288,6 +290,10 @@ def handle_safe_key(event):
 
 
 def get_interact_prompt():
+    if state.day == 5:
+        if state.corridor_exit_open and distance(state.player_x, state.player_y, 2.5, CORRIDOR_LENGTH - 1.5) < 1.2:
+            return "Appuie sur E pour sortir"
+        return None
     if state.day == 2:
         for p in state.paintings:
             if not p["gone"] and distance(state.player_x, state.player_y, p["x"], p["y"]) < 1.25:
@@ -411,6 +417,8 @@ def next_day():
         state.monster_x = 2.5
         state.monster_y = 0.5
         state.chase_timer = 3.0
+        state.stamina = 100
+        state.is_sprinting = False
         show_message("Jour 5 : cours jusqu'au fond du long couloir avant la fin du chrono.", 320)
     else:
         state.game_finished = True
@@ -515,6 +523,9 @@ def update_day_events(dt):
         state.shake = 18
 
     if state.day == 5 and not state.ending_cinematic:
+        state.stamina = max(0, min(100, state.stamina + (-30 if state.is_sprinting else 18) * dt))
+        if state.stamina <= 0:
+            state.is_sprinting = False
         if state.chase_timer > 0:
             state.chase_timer -= dt
             if state.chase_timer <= 0:
