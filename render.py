@@ -856,10 +856,18 @@ def menu_rects():
     center_x = WIDTH // 2
     return {
         "play": pygame.Rect(center_x - 165, 444, 330, 94),
-        "sound": pygame.Rect(center_x - 165, 572, 330, 84),
-        "vol_down": pygame.Rect(center_x - 165, 686, 82, 80),
-        "vol_up": pygame.Rect(center_x + 83, 686, 82, 80),
+        "options": pygame.Rect(center_x - 165, 572, 330, 84),
         "quit": pygame.Rect(center_x - 165, 815, 330, 84),
+    }
+
+
+def options_rects():
+    center_x = WIDTH // 2
+    return {
+        "sound": pygame.Rect(center_x - 165, 380, 330, 84),
+        "vol_down": pygame.Rect(center_x - 165, 500, 82, 80),
+        "vol_up": pygame.Rect(center_x + 83, 500, 82, 80),
+        "back": pygame.Rect(center_x - 165, 650, 330, 84),
     }
 
 
@@ -883,7 +891,6 @@ def draw_button(rect, text, mouse_pos, main=False):
 
 def draw_menu():
     from config import screen, BIG, FONT, SMALL
-    import sounds
     mouse_pos = pygame.mouse.get_pos()
     screen.fill((20, 19, 17))
 
@@ -901,6 +908,30 @@ def draw_menu():
 
     rects = menu_rects()
     draw_button(rects["play"], "Lancer la partie", mouse_pos, True)
+    draw_button(rects["options"], "Options", mouse_pos)
+    draw_button(rects["quit"], "Quitter", mouse_pos)
+
+    hint = SMALL.render("Clique sur Lancer la partie. La souris servira ensuite a regarder.", True, (190, 185, 165))
+    screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT - 52))
+
+
+def draw_options_menu():
+    from config import screen, BIG, FONT, SMALL
+    import sounds
+    mouse_pos = pygame.mouse.get_pos()
+    screen.fill((20, 19, 17))
+
+    for y in range(0, HEIGHT, 58):
+        color = (35, 32, 25) if (y // 58) % 2 == 0 else (28, 27, 23)
+        pygame.draw.rect(screen, color, (0, y, WIDTH, 58))
+
+    for x in range(0, WIDTH, 90):
+        pygame.draw.line(screen, (62, 48, 30), (x, HEIGHT), (x + 140, 0), 1)
+
+    title = FONT.render("Options", True, (245, 222, 142))
+    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
+
+    rects = options_rects()
 
     sound_text = "Son : active" if sounds.sound_enabled else "Son : coupe"
     if not sounds.sound_available:
@@ -910,13 +941,10 @@ def draw_menu():
     draw_button(rects["vol_down"], "-", mouse_pos)
     draw_button(rects["vol_up"], "+", mouse_pos)
 
-    vol_box = pygame.Rect(WIDTH // 2 - 70, 686, 140, 80)
+    vol_box = pygame.Rect(WIDTH // 2 - 70, 500, 140, 80)
     pygame.draw.rect(screen, (12, 12, 13), vol_box, border_radius=8)
     pygame.draw.rect(screen, (132, 118, 78), vol_box, 2, border_radius=8)
     vol = FONT.render("Volume " + str(int(sounds.sound_volume * 100)) + "%", True, (238, 234, 215))
     screen.blit(vol, (vol_box.centerx - vol.get_width() // 2, vol_box.centery - vol.get_height() // 2))
 
-    draw_button(rects["quit"], "Quitter", mouse_pos)
-
-    hint = SMALL.render("Clique sur Lancer la partie. La souris servira ensuite a regarder.", True, (190, 185, 165))
-    screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT - 52))
+    draw_button(rects["back"], "Retour", mouse_pos)

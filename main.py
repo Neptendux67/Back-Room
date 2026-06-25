@@ -56,18 +56,8 @@ def handle_menu_click(pos):
         start_intro()
         return False
 
-    if rects["sound"].collidepoint(pos):
-        sounds.sound_enabled = not sounds.sound_enabled
-        sounds.play_sound("click")
-        return False
-
-    if rects["vol_down"].collidepoint(pos):
-        sounds.sound_volume = max(0.0, round(sounds.sound_volume - 0.1, 1))
-        sounds.play_sound("click")
-        return False
-
-    if rects["vol_up"].collidepoint(pos):
-        sounds.sound_volume = min(1.0, round(sounds.sound_volume + 0.1, 1))
+    if rects["options"].collidepoint(pos):
+        state.game_state = "options"
         sounds.play_sound("click")
         return False
 
@@ -75,6 +65,29 @@ def handle_menu_click(pos):
         return True
 
     return False
+
+
+def handle_options_click(pos):
+    rects = render.options_rects()
+    if rects["sound"].collidepoint(pos):
+        sounds.sound_enabled = not sounds.sound_enabled
+        sounds.play_sound("click")
+        return
+
+    if rects["vol_down"].collidepoint(pos):
+        sounds.sound_volume = max(0.0, round(sounds.sound_volume - 0.1, 1))
+        sounds.play_sound("click")
+        return
+
+    if rects["vol_up"].collidepoint(pos):
+        sounds.sound_volume = min(1.0, round(sounds.sound_volume + 0.1, 1))
+        sounds.play_sound("click")
+        return
+
+    if rects["back"].collidepoint(pos):
+        state.game_state = "menu"
+        sounds.play_sound("click")
+        return
 
 
 sounds.load_sounds()
@@ -95,6 +108,12 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if handle_menu_click(event.pos):
                     running = False
+
+        if state.game_state == "options":
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                state.game_state = "menu"
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                handle_options_click(event.pos)
 
         elif state.game_state == "loading":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -178,6 +197,11 @@ while running:
 
     if state.game_state == "menu":
         render.draw_menu()
+        pygame.display.flip()
+        continue
+
+    if state.game_state == "options":
+        render.draw_options_menu()
         pygame.display.flip()
         continue
 
