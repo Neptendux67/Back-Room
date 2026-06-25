@@ -191,7 +191,7 @@ def finish_cable_task():
     state.power_fixed = True
     state.cable_progress = 100
     close_cable_panel()
-    show_message("Les 3 cables sont relies. Le courant revient, le monstre disparait.", 280)
+    show_message("Les 3 cables sont relies. Le courant revient,", 280)
 
 
 def handle_cable_click(pos):
