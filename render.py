@@ -22,6 +22,9 @@ _SIN_OFF = None
 _BODY_OVERLAY = None
 _SHADE_PANEL = None
 _PAUSE_BG = None
+_FPS_TICKS = 0
+_FPS_COUNT = 0
+_FPS_DISPLAY = 0
 
 
 def load_textures():
@@ -87,31 +90,73 @@ def cast_rays():
 
     arr = surfarray.pixels3d(screen)
     cols = TEX_COLS
+    level = game.current_map()
+    h = len(level)
+    w_map = len(level[0])
+    px = state.player_x
+    py = state.player_y
+    p_angle = state.player_a
 
     for ray in range(RAYS):
         ray_angle = start_angle + ray / RAYS * FOV
-        sin_a = math.sin(ray_angle)
         cos_a = math.cos(ray_angle)
+        sin_a = math.sin(ray_angle)
 
-        depth = 0.02
-        hit_x = state.player_x
-        hit_y = state.player_y
+        map_x = int(px)
+        map_y = int(py)
 
-        while depth < MAX_DEPTH:
-            hit_x = state.player_x + cos_a * depth
-            hit_y = state.player_y + sin_a * depth
+        delta_dist_x = 1e30 if cos_a == 0 else abs(1.0 / cos_a)
+        delta_dist_y = 1e30 if sin_a == 0 else abs(1.0 / sin_a)
 
-            if game.wall_at(hit_x, hit_y):
+        if cos_a < 0:
+            step_x = -1
+            side_dist_x = (px - map_x) * delta_dist_x
+        else:
+            step_x = 1
+            side_dist_x = (map_x + 1.0 - px) * delta_dist_x
+
+        if sin_a < 0:
+            step_y = -1
+            side_dist_y = (py - map_y) * delta_dist_y
+        else:
+            step_y = 1
+            side_dist_y = (map_y + 1.0 - py) * delta_dist_y
+
+        hit = False
+        side = 0
+        while not hit:
+            if side_dist_x < side_dist_y:
+                side_dist_x += delta_dist_x
+                map_x += step_x
+                side = 0
+            else:
+                side_dist_y += delta_dist_y
+                map_y += step_y
+                side = 1
+
+            if map_x < 0 or map_y < 0 or map_y >= h or map_x >= w_map:
+                hit = True
                 break
 
-            depth += 0.025
+            if level[map_y][map_x] == '1':
+                hit = True
 
-        depth *= math.cos(state.player_a - ray_angle)
+        if hit and not (map_x < 0 or map_y < 0 or map_y >= h or map_x >= w_map):
+            if side == 0:
+                depth = (map_x - px + (1 - step_x) / 2) / cos_a
+            else:
+                depth = (map_y - py + (1 - step_y) / 2) / sin_a
+        else:
+            depth = MAX_DEPTH
+
+        depth = min(depth, MAX_DEPTH)
         wall_h = min(HEIGHT * 2, int(HEIGHT / (depth + 0.0001)))
 
-        fx = hit_x - int(hit_x)
-        fy = hit_y - int(hit_y)
-        vertical_hit = fx < 0.04 or fx > 0.96
+        if side == 0:
+            wall_x = py + depth * sin_a
+        else:
+            wall_x = px + depth * cos_a
+        wall_x -= math.floor(wall_x)
 
         x_screen = int(ray * WIDTH / RAYS)
         w = int(WIDTH / RAYS) + 1
@@ -120,16 +165,16 @@ def cast_rays():
         y2 = y1 + wall_h
 
         for sx in range(max(0, x_screen), x_end):
-            depth_buffer[sx] = depth
+            depth_buffer[sx] = min(depth_buffer[sx], depth)
 
         shade = max(0.12, 1.0 - depth / MAX_DEPTH * 0.92)
         if state.day == 4 and not state.power_fixed:
             shade *= 0.25
-        if not vertical_hit:
+        if side == 1:
             shade *= 0.75
 
         if cols is not None:
-            tex_x = int(((fy if vertical_hit else fx) * TILE_SCALE % 1.0) * (TEX_W - 1))
+            tex_x = int((wall_x * TILE_SCALE % 1.0) * (TEX_W - 1))
             tex_x = max(0, min(TEX_W - 1, tex_x))
 
             y_start = y1 if y1 > 0 else 0
@@ -147,7 +192,7 @@ def cast_rays():
                 arr[x_screen:x_end, y_start:y_end, :] = out[np.newaxis, :, :]
         else:
             base = [180, 155, 100]
-            if not vertical_hit:
+            if side == 1:
                 base = [int(c * 0.82) for c in base]
             c = (int(base[0] * shade), int(base[1] * shade), int(base[2] * shade))
             pygame.draw.rect(screen, c, (x_screen, y1, w, wall_h))
@@ -633,8 +678,15 @@ def draw_ui():
     objective = SMALL.render(obj, True, (220, 220, 220))
     screen.blit(objective, (30, 75))
 
-    controls = SMALL.render("Souris | ZQSD/WASD | Molette inv. | E | ESPACE | ESC", True, (185, 185, 185))
-    screen.blit(controls, (WIDTH - controls.get_width() - 30, 31))
+    global _FPS_TICKS, _FPS_COUNT, _FPS_DISPLAY
+    _FPS_COUNT += 1
+    now = pygame.time.get_ticks()
+    if now - _FPS_TICKS > 500:
+        _FPS_DISPLAY = int(_FPS_COUNT * 1000 / (now - _FPS_TICKS))
+        _FPS_TICKS = now
+        _FPS_COUNT = 0
+    fps_txt = SMALL.render(f"FPS: {_FPS_DISPLAY}", True, (120, 200, 120))
+    screen.blit(fps_txt, (WIDTH - fps_txt.get_width() - 30, 31))
 
     if state.message_timer > 0:
         box = pygame.Rect(30, HEIGHT - 240, WIDTH - 60, 90)

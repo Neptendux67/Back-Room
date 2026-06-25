@@ -297,7 +297,7 @@ def get_interact_prompt():
     if state.day == 2:
         for p in state.paintings:
             if not p["gone"] and distance(state.player_x, state.player_y, p["x"], p["y"]) < 1.25:
-                return "Appuie sur E pour jeter le tableau"
+                return "Appuie sur E pour récupérer le tableau"
     if state.day == 3:
         if distance(state.player_x, state.player_y, SAFE_X, SAFE_Y) < 1.6:
             return "Appuie sur E pour ouvrir le coffre"

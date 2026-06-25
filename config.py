@@ -3,6 +3,7 @@ import pygame
 
 WIDTH = 1920
 HEIGHT = 1080
+FPS_CAP = 144
 
 FOV = math.pi / 3
 RAYS = 460

@@ -155,7 +155,7 @@ sounds.load_sounds()
 running = True
 
 while running:
-    dt = config.clock.tick(60) / 1000
+    dt = min(config.clock.tick(config.FPS_CAP) / 1000, 0.05)  # cap dt to prevent spiral-of-death
     moving_now = False
 
     for event in pygame.event.get():
@@ -370,9 +370,11 @@ while running:
             state.shake -= 1
             offset_x = random.randint(-state.shake, state.shake)
             offset_y = random.randint(-state.shake, state.shake)
-            copy = config.screen.copy()
+            if not hasattr(config, '_shake_buf'):
+                config._shake_buf = pygame.Surface((config.WIDTH, config.HEIGHT))
+            config._shake_buf.blit(config.screen, (0, 0))
             config.screen.fill((0, 0, 0))
-            config.screen.blit(copy, (offset_x, offset_y))
+            config.screen.blit(config._shake_buf, (offset_x, offset_y))
 
         render.draw_ui()
         if state.cable_panel_open:
