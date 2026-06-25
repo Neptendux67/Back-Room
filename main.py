@@ -372,21 +372,40 @@ while running:
             temp_surf = pygame.Surface((config.WIDTH, config.HEIGHT))
             config.screen = temp_surf
             
+            # Move camera back safely
+            dist = 2.0
+            while dist > 0.5:
+                cx = state.death_pos_x - math.cos(state.death_pos_a) * dist
+                cy = state.death_pos_y - math.sin(state.death_pos_a) * dist
+                if not game.wall_at(cx, cy):
+                    break
+                dist -= 0.15
+                
+            orig_px = state.player_x
+            orig_py = state.player_y
+            orig_pa = state.player_a
+            orig_pitch = state.look_pitch
+            
+            state.player_x = state.death_pos_x - math.cos(state.death_pos_a) * dist
+            state.player_y = state.death_pos_y - math.sin(state.death_pos_a) * dist
+            state.player_a = state.death_pos_a
+            
+            # Smooth look down tilt
+            look_down_progress = min(1.0, state.death_timer / 1.5)
+            state.look_pitch = int(-180 * look_down_progress)
+            
         render.draw_floor_ceiling()
         depth_buffer = render.cast_rays()
         render.draw_objects(depth_buffer)
         
         if state.death_cinematic:
             config.screen = original_screen
-            tilt_progress = min(1.0, state.death_timer / 1.5)
-            angle = tilt_progress * 78.0
+            state.player_x = orig_px
+            state.player_y = orig_py
+            state.player_a = orig_pa
+            state.look_pitch = orig_pitch
             
-            rotated = pygame.transform.rotate(temp_surf, angle)
-            rx = config.WIDTH // 2 - rotated.get_width() // 2
-            ry = config.HEIGHT // 2 - rotated.get_height() // 2
-            
-            config.screen.fill((8, 0, 0))
-            config.screen.blit(rotated, (rx, ry))
+            config.screen.blit(temp_surf, (0, 0))
             
             # Red vignette blood fade-in
             vignette = pygame.Surface((config.WIDTH, config.HEIGHT), pygame.SRCALPHA)

@@ -12,6 +12,7 @@ TEX_COLS = None
 TEX_SURF = None
 MONSTER_FRAMES = None
 MONSTER_SITTING_SURF = None
+PLAYER_SLUMPED_SURF = None
 MONSTER_FW = 48
 MONSTER_FH = 64
 TEX_W = 32
@@ -29,7 +30,7 @@ _FPS_DISPLAY = 0
 
 
 def load_textures():
-    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF, MONSTER_FRAMES, MONSTER_FW, MONSTER_FH, MONSTER_SITTING_SURF
+    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF, MONSTER_FRAMES, MONSTER_FW, MONSTER_FH, MONSTER_SITTING_SURF, PLAYER_SLUMPED_SURF
     tex_dir = os.path.join(os.path.dirname(__file__), "assets", "textures")
     path = os.path.join(tex_dir, "Wall-Texture.png")
     try:
@@ -78,6 +79,13 @@ def load_textures():
     except Exception as e:
         print("Warning: Could not load sitting monster texture:", e)
         MONSTER_SITTING_SURF = None
+
+    try:
+        player_path = os.path.join(tex_dir, "Player-Slumped.png")
+        PLAYER_SLUMPED_SURF = pygame.image.load(player_path).convert_alpha()
+    except Exception as e:
+        print("Warning: Could not load slumped player texture:", e)
+        PLAYER_SLUMPED_SURF = None
 
 
 def draw_floor_ceiling():
@@ -341,6 +349,9 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
         else:
             aspect = MONSTER_FRAMES[0].get_width() / MONSTER_FRAMES[0].get_height()
         sprite_w = max(8, min(WIDTH, int(sprite_h * aspect)))
+    elif shape == "player_slumped" and PLAYER_SLUMPED_SURF:
+        aspect = PLAYER_SLUMPED_SURF.get_width() / PLAYER_SLUMPED_SURF.get_height()
+        sprite_w = max(8, min(WIDTH, int(sprite_h * aspect)))
     else:
         sprite_w = max(8, min(WIDTH, sprite_h // 2))
 
@@ -464,6 +475,16 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
             sprite.blit(scaled, (0, 0))
         else:
             pygame.draw.rect(sprite, (10, 10, 12), (0, 0, rect.width, rect.height))
+    elif shape == "player_slumped":
+        if PLAYER_SLUMPED_SURF:
+            scaled = pygame.transform.scale(PLAYER_SLUMPED_SURF, (rect.width, rect.height))
+            if darkness < 1.0:
+                dark = pygame.Surface(scaled.get_size(), pygame.SRCALPHA)
+                dark.fill((0, 0, 0, int((1.0 - darkness) * 255)))
+                scaled.blit(dark, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
+            sprite.blit(scaled, (0, 0))
+        else:
+            pygame.draw.rect(sprite, (220, 200, 50), (0, 0, rect.width, rect.height))
     else:
         pygame.draw.rect(sprite, c, (0, 0, rect.width, rect.height))
         pygame.draw.rect(sprite, (35, 30, 25), (0, 0, rect.width, rect.height), 2)
@@ -532,7 +553,10 @@ def draw_objects(depth_buffer):
         if not state.power_fixed:
             draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
-    if state.day == 5 and not state.ending_cinematic and state.monster_visible:
+    if state.death_cinematic:
+        draw_sprite(state.death_pos_x, state.death_pos_y, (255, 255, 255), 1.25, None, "player_slumped", depth_buffer)
+        draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, None, "monster", depth_buffer)
+    elif state.day == 5 and not state.ending_cinematic and state.monster_visible:
         draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
 

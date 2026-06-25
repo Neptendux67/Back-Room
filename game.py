@@ -114,6 +114,9 @@ def reset_game():
     state.player_has_moved = False
     state.death_cinematic = False
     state.death_timer = 0.0
+    state.death_pos_x = 0.0
+    state.death_pos_y = 0.0
+    state.death_pos_a = 0.0
 
 
 def kill_player(reason):
@@ -127,10 +130,13 @@ def kill_player(reason):
         
     state.death_cinematic = True
     state.death_timer = 0.0
+    state.death_pos_x = state.player_x
+    state.death_pos_y = state.player_y
+    state.death_pos_a = state.player_a
     
-    # Place the monster in front of the player (facing them)
-    state.monster_x = state.player_x + math.cos(state.player_a) * 0.85
-    state.monster_y = state.player_y + math.sin(state.player_a) * 0.85
+    # Place the monster right next to the player's body
+    state.monster_x = state.player_x + math.cos(state.player_a + math.pi / 4.0) * 0.45
+    state.monster_y = state.player_y + math.sin(state.player_a + math.pi / 4.0) * 0.45
     state.monster_visible = True
     
     sounds.play_sound("bang")

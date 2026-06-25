@@ -73,4 +73,7 @@ monster_scream_played = False
 player_has_moved = False
 death_cinematic = False
 death_timer = 0.0
+death_pos_x = 0.0
+death_pos_y = 0.0
+death_pos_a = 0.0
 
