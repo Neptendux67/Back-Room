@@ -159,6 +159,28 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+        if not state.debug_menu_open and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_BACKSPACE:
+                state.debug_input = state.debug_input[:-1]
+            elif event.unicode:
+                state.debug_input += event.unicode
+                if "admin" in state.debug_input:
+                    state.debug_input = ""
+                    state.debug_menu_open = True
+                    pygame.mouse.set_visible(True)
+                    pygame.event.set_grab(False)
+
+        if state.debug_menu_open:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                state.debug_menu_open = False
+                if state.game_state == "playing":
+                    pygame.mouse.set_visible(False)
+                    pygame.event.set_grab(True)
+                    pygame.mouse.get_rel()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                render.handle_debug_click(event.pos)
+            continue
+
         if state.game_state == "menu":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 running = False

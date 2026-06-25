@@ -63,3 +63,5 @@ game_state = "loading"
 corridor_exit_open = False
 ending_cinematic = False
 death_message = ""
+debug_input = ""
+debug_menu_open = False
