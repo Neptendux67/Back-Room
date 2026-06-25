@@ -1,7 +1,7 @@
 import math
 import random
 import pygame
-from config import DAY_LIMIT, MAX_HEALTH, APARTMENT_MAP, CORRIDOR_MAP, CORRIDOR_LENGTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, FOV
+from config import DAY_LIMIT, MAX_HEALTH, APARTMENT_MAP, CORRIDOR_MAP, CORRIDOR_LENGTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, SHREDDER_X, SHREDDER_Y, FOV
 import state
 import sounds
 
@@ -83,6 +83,7 @@ def reset_game():
 
     for painting in state.paintings:
         painting["gone"] = False
+        painting["shredded"] = False
     for spot in state.sink_spots:
         spot["used"] = False
 
@@ -324,14 +325,30 @@ def interact():
         return
 
     if state.day == 2:
+        shredder_dist = distance(state.player_x, state.player_y, SHREDDER_X, SHREDDER_Y)
+        if shredder_dist < 1.2 and selected_item() == "Tableau":
+            state.inventory_slots[state.selected_inventory] = None
+            for p in state.paintings:
+                if p["gone"] and not p["shredded"]:
+                    p["shredded"] = True
+                    break
+            remaining = sum(1 for p in state.paintings if not p["shredded"])
+            if remaining == 0:
+                show_message("Tous les tableaux sont detruits. Va a la sortie !", 300)
+            else:
+                show_message(f"Tableau broye. Il en reste {remaining}.", 180)
+            sounds.play_sound("interact")
+            return
+
         for p in state.paintings:
             if not p["gone"] and distance(state.player_x, state.player_y, p["x"], p["y"]) < 1.25:
                 p["gone"] = True
+                for i in range(len(state.inventory_slots)):
+                    if state.inventory_slots[i] is None:
+                        state.inventory_slots[i] = "Tableau"
+                        break
                 remaining = sum(1 for item in state.paintings if not item["gone"])
-                if remaining == 0:
-                    show_message("Tous les tableaux sont jetes. Va a la porte de sortie pour aller au travail.", 300)
-                else:
-                    show_message("Tu jettes le tableau. Il en reste " + str(remaining) + ".")
+                show_message(f"Tableau recupere. Porte-le au broyeur ! ({remaining} restants)", 180)
                 sounds.play_sound("interact")
                 return
 
@@ -384,6 +401,7 @@ def next_day():
         state.ending_timer = 0
         state.monster_x = 2.5
         state.monster_y = 0.5
+        state.chase_timer = 3.0
         show_message("Jour 5 : cours jusqu'au fond du long couloir avant la fin du chrono.", 320)
     else:
         state.game_finished = True
@@ -400,11 +418,11 @@ def check_exit():
         else:
             show_message("Quelque chose te retient. Attends...")
     elif state.day == 2:
-        if all(p["gone"] for p in state.paintings):
+        if all(p["shredded"] for p in state.paintings):
             sounds.play_sound("door")
             next_day()
         else:
-            show_message("Impossible de partir : les tableaux bougent encore.")
+            show_message("Broye tous les tableaux avant de partir.", 220)
     elif state.day == 3:
         if not state.stuck:
             show_message("Porte verrouillee. Trouve la clef, selectionne-la, puis E.", 220)
@@ -488,13 +506,18 @@ def update_day_events(dt):
         state.shake = 18
 
     if state.day == 5 and not state.ending_cinematic:
-        dy = state.player_y - state.monster_y
-        dist = abs(dy)
-        if dist > 0.2:
-            speed = 0.075
-            state.monster_y += math.copysign(speed, dy)
-            if wall_at(state.monster_x, state.monster_y):
-                state.monster_y -= math.copysign(speed, dy)
-        state.heartbeat = max(0, 6 - dist)
-        if dist < 0.55 and state.player_health != 999:
-            kill_player("Le monstre t'a rattrape. Tu recommences depuis le debut.")
+        if state.chase_timer > 0:
+            state.chase_timer -= dt
+            if state.chase_timer <= 0:
+                show_message("Il est derriere toi ! Ne t'arrete pas !", 180)
+                state.shake = 12
+        else:
+            dy = state.player_y - state.monster_y
+            dist = abs(dy)
+            if dist > 0.2:
+                state.monster_y += math.copysign(0.085, dy)
+                if wall_at(state.monster_x, state.monster_y):
+                    state.monster_y -= math.copysign(0.085, dy)
+            state.heartbeat = max(0, 6 - dist)
+            if dist < 0.55 and state.player_health != 999:
+                kill_player("Le monstre t'a rattrape. Tu recommences depuis le debut.")

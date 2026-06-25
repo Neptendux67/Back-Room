@@ -14,9 +14,9 @@ j1_event_done = False
 j1_timer = 4.0
 
 paintings = [
-    {"x": 4.5, "y": 1.5, "gone": False},
-    {"x": 11.5, "y": 3.5, "gone": False},
-    {"x": 2.5, "y": 5.5, "gone": False},
+    {"x": 4.5, "y": 1.5, "gone": False, "shredded": False},
+    {"x": 11.5, "y": 3.5, "gone": False, "shredded": False},
+    {"x": 2.5, "y": 5.5, "gone": False, "shredded": False},
 ]
 
 sink_spots = [
@@ -65,3 +65,4 @@ ending_cinematic = False
 death_message = ""
 debug_input = ""
 debug_menu_open = False
+chase_timer = 0.0

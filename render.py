@@ -370,6 +370,15 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
         pygame.draw.rect(sprite, c, (4, 0, rect.width - 8, rect.height))
         pygame.draw.rect(sprite, (38, 52, 66), (4, 0, rect.width - 8, rect.height), 3)
         pygame.draw.circle(sprite, (230, 210, 90), (rect.width - 14, rect.height // 2), 4)
+    elif shape == "shredder":
+        pygame.draw.rect(sprite, color_with_light((100, 85, 60), darkness), (0, 0, rect.width, rect.height), border_radius=6)
+        pygame.draw.rect(sprite, color_with_light((60, 50, 35), darkness), (2, 2, rect.width - 4, rect.height - 4), 3, border_radius=6)
+        slot = pygame.Rect(rect.width // 4, rect.height // 3, rect.width // 2, rect.height // 6)
+        pygame.draw.rect(sprite, (20, 18, 15), slot, border_radius=2)
+        pygame.draw.rect(sprite, color_with_light((160, 140, 110), darkness), (rect.width // 3, rect.height * 2 // 3, rect.width // 3, rect.height // 5))
+        teeth = [(rect.width // 3 + i * 8, rect.height * 2 // 3) for i in range(4)]
+        for tx, ty in teeth:
+            pygame.draw.polygon(sprite, color_with_light((180, 160, 130), darkness), [(tx, ty), (tx + 3, ty - 6), (tx + 6, ty)])
     elif shape == "monster":
         if MONSTER_FRAMES:
             tick = pygame.time.get_ticks() / 1000
@@ -404,14 +413,6 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
             pygame.draw.ellipse(sprite, color_with_light((12, 8, 7), darkness), (rect.width // 5, rect.height // 2 - 2, rect.width * 3 // 5, rect.height // 4))
 
     visible = draw_clipped_sprite(sprite, rect, dist, depth_buffer)
-    center_visible = True
-    if depth_buffer is not None and 0 <= rect.centerx < WIDTH:
-        center_visible = dist <= depth_buffer[rect.centerx] + 0.18
-
-    if visible and center_visible and label and dist < 3.4:
-        from config import SMALL
-        txt = SMALL.render(label, True, (245, 245, 235))
-        screen.blit(txt, (rect.centerx - txt.get_width() // 2, rect.y - 18))
 
 
 def draw_objects(depth_buffer):
@@ -443,10 +444,12 @@ def draw_objects(depth_buffer):
         draw_sprite(item["x"], item["y"], item["color"], item["size"], None, shape, depth_buffer)
 
     if state.day == 2:
+        from config import SHREDDER_X, SHREDDER_Y
+        draw_sprite(SHREDDER_X, SHREDDER_Y, (150, 120, 80), 0.9, None, "shredder", depth_buffer)
         for i, p in enumerate(state.paintings):
             if not p["gone"]:
                 offset = math.sin(pygame.time.get_ticks() / 300 + i) * 0.15
-                draw_sprite(p["x"] + offset, p["y"], (180, 55, 75), 0.75, "tableau", "painting", depth_buffer)
+                draw_sprite(p["x"] + offset, p["y"], (180, 55, 75), 0.75, None, "painting", depth_buffer)
 
     if state.day == 3:
         label = "coffre ouvert" if state.safe_unlocked else "coffre fort"
@@ -1187,6 +1190,7 @@ def handle_debug_click(pos):
                 state.player_a = math.pi / 2
                 state.monster_x = 2.5
                 state.monster_y = 0.5
+                state.chase_timer = 3.0
             else:
                 state.player_x = 1.5
                 state.player_y = 9.5

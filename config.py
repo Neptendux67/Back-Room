@@ -43,6 +43,8 @@ CABLE_X = 2.5
 CABLE_Y = 1.5
 SAFE_X = 12.5
 SAFE_Y = 1.5
+SHREDDER_X = 6.5
+SHREDDER_Y = 7.5
 
 CABLE_COLORS = {
     "rouge": (214, 50, 45),
