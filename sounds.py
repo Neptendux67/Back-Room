@@ -123,6 +123,8 @@ def update_footsteps(is_walking):
         foot_channel.set_volume(sound_volume)
 
 
+MUSIC_TRACKS = ["ambient-music", "mongolian-secret"]
+
 def start_menu_music():
     if not sound_available or not sound_enabled:
         return
@@ -149,13 +151,24 @@ def stop_all_sounds():
         pygame.mixer.music.unload()
 
 
-def start_ambient_music():
+def start_ambient_music(track=None):
     if not sound_available or not sound_enabled:
         return
-    path = os.path.join(_audio_dir(), "ambient-music.wav")
+    if track is None:
+        try:
+            import settings
+            track = settings.get().get("music_track", "ambient-music")
+        except Exception:
+            track = "ambient-music"
+    path = os.path.join(_audio_dir(), track + ".wav")
+    if not os.path.isfile(path):
+        path = os.path.join(_audio_dir(), "ambient-music.wav")
     if os.path.isfile(path):
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
         pygame.mixer.music.load(path)
-        pygame.mixer.music.set_volume(music_volume * 0.15)
+        vol = music_volume * (0.50 if "mongolian" in track else 0.25)
+        pygame.mixer.music.set_volume(vol)
         pygame.mixer.music.play(loops=-1)
 
 

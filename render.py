@@ -24,6 +24,8 @@ _SIN_OFF = None
 _BODY_OVERLAY = None
 _SHADE_PANEL = None
 _PAUSE_BG = None
+_MENU_LOGO = None
+_MENU_VIGNETTE = None
 _FPS_TICKS = 0
 _FPS_COUNT = 0
 _FPS_DISPLAY = 0
@@ -976,9 +978,9 @@ def draw_ui():
             t = SMALL.render("Appuie sur E pour ouvrir la boite et relier rouge, jaune et bleu", True, (255, 240, 190))
             screen.blit(t, (WIDTH // 2 - t.get_width() // 2, HEIGHT - 260))
 
-    if state.day == 5 and not state.ending_cinematic:
+    if not state.ending_cinematic:
         bar_w, bar_h = 216, 20
-        sx, sy = WIDTH // 2 - bar_w // 2, HEIGHT - 56
+        sx, sy = 30, HEIGHT - 56
         pygame.draw.rect(screen, (20, 20, 25), (sx, sy, bar_w, bar_h), border_radius=5)
         fill = int(bar_w * state.stamina / 100)
         col = (70, 200, 220) if state.stamina > 30 else (220, 180, 60) if state.stamina > 15 else (220, 60, 60)
@@ -1318,11 +1320,14 @@ def menu_rects():
 def options_rects():
     center_x = WIDTH // 2
     return {
-        "vol_down": pygame.Rect(center_x - 165, 430, 82, 60),
-        "vol_up": pygame.Rect(center_x + 83, 430, 82, 60),
-        "music_vol_down": pygame.Rect(center_x - 165, 540, 82, 60),
-        "music_vol_up": pygame.Rect(center_x + 83, 540, 82, 60),
-        "back": pygame.Rect(center_x - 165, 660, 330, 60),
+        "vol_down": pygame.Rect(center_x - 165, 280, 82, 60),
+        "vol_up": pygame.Rect(center_x + 83, 280, 82, 60),
+        "music_vol_down": pygame.Rect(center_x - 165, 380, 82, 60),
+        "music_vol_up": pygame.Rect(center_x + 83, 380, 82, 60),
+        "music_track": pygame.Rect(center_x - 165, 480, 330, 60),
+        "fullscreen": pygame.Rect(center_x - 165, 570, 330, 60),
+        "resolution": pygame.Rect(center_x - 165, 660, 330, 60),
+        "back": pygame.Rect(center_x - 165, 750, 330, 60),
     }
 
 
@@ -1369,7 +1374,7 @@ def draw_menu():
 
 def draw_options_menu():
     from config import screen, BIG, FONT, SMALL
-    import sounds
+    import sounds, settings
     mouse_pos = pygame.mouse.get_pos()
     screen.fill((20, 19, 17))
 
@@ -1384,30 +1389,37 @@ def draw_options_menu():
     screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 170))
 
     rects = options_rects()
+    opts = settings.get()
 
     draw_button(rects["vol_down"], "-", mouse_pos)
     draw_button(rects["vol_up"], "+", mouse_pos)
-
-    vol_box = pygame.Rect(WIDTH // 2 - 70, 430, 140, 60)
+    vol_box = pygame.Rect(WIDTH // 2 - 70, 280, 140, 60)
     pygame.draw.rect(screen, (12, 12, 13), vol_box, border_radius=8)
     pygame.draw.rect(screen, (132, 118, 78), vol_box, 2, border_radius=8)
     vol = FONT.render("Volume " + str(int(sounds.sound_volume * 100)) + "%", True, (238, 234, 215))
     screen.blit(vol, (vol_box.centerx - vol.get_width() // 2, vol_box.centery - vol.get_height() // 2))
-
     eff_label = SMALL.render("Effets sonores", True, (190, 185, 165))
-    screen.blit(eff_label, (WIDTH // 2 - eff_label.get_width() // 2, 400))
+    screen.blit(eff_label, (WIDTH // 2 - eff_label.get_width() // 2, 250))
 
     draw_button(rects["music_vol_down"], "-", mouse_pos)
     draw_button(rects["music_vol_up"], "+", mouse_pos)
-
-    music_box = pygame.Rect(WIDTH // 2 - 70, 540, 140, 60)
+    music_box = pygame.Rect(WIDTH // 2 - 70, 380, 140, 60)
     pygame.draw.rect(screen, (12, 12, 13), music_box, border_radius=8)
     pygame.draw.rect(screen, (132, 118, 78), music_box, 2, border_radius=8)
     music_vol_text = FONT.render("Volume " + str(int(sounds.music_volume * 100)) + "%", True, (238, 234, 215))
     screen.blit(music_vol_text, (music_box.centerx - music_vol_text.get_width() // 2, music_box.centery - music_vol_text.get_height() // 2))
+    music_label = SMALL.render("Volume Musique", True, (190, 185, 165))
+    screen.blit(music_label, (WIDTH // 2 - music_label.get_width() // 2, 350))
 
-    music_label = SMALL.render("Musique", True, (190, 185, 165))
-    screen.blit(music_label, (WIDTH // 2 - music_label.get_width() // 2, 510))
+    track_label = opts.get("music_track", "ambient-music")
+    track_names = {"ambient-music": "Ambiance", "mongolian-secret": "Mongolian Secret"}
+    draw_button(rects["music_track"], f"Musique: {track_names.get(track_label, track_label)}", mouse_pos)
+
+    fs_text = "Plein ecran: OUI" if opts["fullscreen"] else "Plein ecran: NON"
+    draw_button(rects["fullscreen"], fs_text, mouse_pos)
+
+    res = settings.RESOLUTIONS[opts["resolution_index"]]
+    draw_button(rects["resolution"], f"Resolution: {res[0]}x{res[1]}", mouse_pos)
 
     draw_button(rects["back"], "Retour", mouse_pos)
 
@@ -1419,8 +1431,9 @@ def pause_menu_rects():
         "vol_up": pygame.Rect(center_x + 76, 378, 70, 50),
         "music_vol_down": pygame.Rect(center_x - 146, 468, 70, 50),
         "music_vol_up": pygame.Rect(center_x + 76, 468, 70, 50),
-        "resume": pygame.Rect(center_x - 146, 548, 292, 56),
-        "menu": pygame.Rect(center_x - 146, 618, 292, 56),
+        "music_track": pygame.Rect(center_x - 146, 548, 292, 56),
+        "resume": pygame.Rect(center_x - 146, 618, 292, 56),
+        "menu": pygame.Rect(center_x - 146, 688, 292, 56),
     }
 
 
@@ -1451,7 +1464,7 @@ def draw_pause_menu():
     overlay.fill((0, 0, 0, 70))
     screen.blit(overlay, (0, 0))
 
-    panel = pygame.Rect(WIDTH // 2 - 200, HEIGHT // 2 - 260, 400, 520)
+    panel = pygame.Rect(WIDTH // 2 - 200, HEIGHT // 2 - 300, 400, 600)
     pygame.draw.rect(screen, (22, 23, 25), panel, border_radius=12)
     pygame.draw.rect(screen, (190, 170, 104), panel, 3, border_radius=12)
 
@@ -1483,6 +1496,11 @@ def draw_pause_menu():
 
     music_label = SMALL.render("Musique", True, (190, 185, 165))
     screen.blit(music_label, (WIDTH // 2 - music_label.get_width() // 2, 445))
+
+    import settings
+    track_label = settings.get().get("music_track", "ambient-music")
+    track_names = {"ambient-music": "Ambiance", "mongolian-secret": "Mongolian Secret"}
+    draw_button(rects["music_track"], f"Musique: {track_names.get(track_label, track_label)}", mouse_pos)
 
     draw_button(rects["resume"], "Reprendre", mouse_pos, True)
     draw_button(rects["menu"], "Menu principal", mouse_pos)

@@ -625,6 +625,7 @@ def update_day_events(dt):
                     state.heartbeat = max(0, 6 - dist)
                     if dist < 0.55 and state.player_health != 999:
                         kill_player("Le monstre t'a rattrape. Tu recommences depuis le debut.")
+    if not state.ending_cinematic:
         state.stamina = max(0, min(100, state.stamina + (-30 if state.is_sprinting else 18) * dt))
         if state.stamina <= 0:
             state.is_sprinting = False

@@ -8,6 +8,7 @@ import state
 import sounds
 import game
 import render
+import settings
 
 pygame.init()
 
@@ -18,8 +19,14 @@ try:
 except pygame.error:
     sounds.sound_available = False
 
-config.screen = pygame.display.set_mode((config.WIDTH, config.HEIGHT))
+settings.load()
+settings.apply()
 pygame.display.set_caption("Backroom : One Minute to Escape")
+try:
+    icon = pygame.image.load(os.path.join("assets", "ui", "logo.png"))
+    pygame.display.set_icon(icon)
+except Exception:
+    pass
 config.clock = pygame.time.Clock()
 
 config.FONT = pygame.font.SysFont("arial", 22)
@@ -83,37 +90,84 @@ def handle_menu_click(pos):
 
 
 def handle_options_click(pos):
+    import settings
     rects = render.options_rects()
+    opts = settings.get()
+    changed = False
+
     if rects["vol_down"].collidepoint(pos):
         sounds.sound_volume = max(0.0, round(sounds.sound_volume - 0.1, 1))
         sounds.play_sound("click")
-        return
+        opts["sound_volume"] = sounds.sound_volume
+        changed = True
 
     if rects["vol_up"].collidepoint(pos):
         sounds.sound_volume = min(1.0, round(sounds.sound_volume + 0.1, 1))
         sounds.play_sound("click")
-        return
+        opts["sound_volume"] = sounds.sound_volume
+        changed = True
 
     if rects["music_vol_down"].collidepoint(pos):
         sounds.music_volume = max(0.0, round(sounds.music_volume - 0.1, 1))
         sounds.start_menu_music()
         sounds.play_sound("click")
-        return
+        opts["music_volume"] = sounds.music_volume
+        changed = True
 
     if rects["music_vol_up"].collidepoint(pos):
         sounds.music_volume = min(1.0, round(sounds.music_volume + 0.1, 1))
         sounds.start_menu_music()
         sounds.play_sound("click")
-        return
+        opts["music_volume"] = sounds.music_volume
+        changed = True
+
+    if rects["fullscreen"].collidepoint(pos):
+        opts["fullscreen"] = not opts["fullscreen"]
+        settings.apply()
+        render.load_textures()
+        changed = True
+        sounds.play_sound("click")
+
+    if rects["resolution"].collidepoint(pos):
+        opts["resolution_index"] = (opts["resolution_index"] + 1) % len(settings.RESOLUTIONS)
+        settings.apply()
+        render.load_textures()
+        changed = True
+        sounds.play_sound("click")
+
+    if rects["music_track"] and rects["music_track"].collidepoint(pos):
+        tracks = ["ambient-music", "mongolian-secret"]
+        cur = opts.get("music_track", "ambient-music")
+        idx = (tracks.index(cur) + 1) % len(tracks) if cur in tracks else 0
+        opts["music_track"] = tracks[idx]
+        sounds.start_ambient_music(tracks[idx])
+        changed = True
+        sounds.play_sound("click")
 
     if rects["back"].collidepoint(pos):
+        settings.save()
         enter_menu()
         sounds.play_sound("click")
         return
 
+    if changed:
+        settings.save()
+
 
 def handle_pause_click(pos):
+    import settings
     rects = render.pause_menu_rects()
+
+    if rects["music_track"] and rects["music_track"].collidepoint(pos):
+        tracks = ["ambient-music", "mongolian-secret"]
+        cur = settings.get().get("music_track", "ambient-music")
+        idx = (tracks.index(cur) + 1) % len(tracks) if cur in tracks else 0
+        settings.get()["music_track"] = tracks[idx]
+        sounds.start_ambient_music(tracks[idx])
+        settings.save()
+        sounds.play_sound("click")
+        return
+
     if rects["resume"].collidepoint(pos):
         render.clear_pause_bg()
         state.game_state = "playing"
@@ -325,11 +379,8 @@ while running:
     keys = pygame.key.get_pressed()
 
     if not state.game_finished:
-        if state.day == 5:
-            state.is_sprinting = (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) and state.stamina > 0
-            speed = config.SPRINT_SPEED if state.is_sprinting else config.WALK_SPEED
-        else:
-            speed = config.WALK_SPEED
+        state.is_sprinting = (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) and state.stamina > 0
+        speed = config.SPRINT_SPEED if state.is_sprinting else config.WALK_SPEED
 
         if not state.stuck and not state.cable_panel_open and not state.safe_panel_open and not state.death_cinematic:
             forward = keys[pygame.K_w] or keys[pygame.K_z]
