@@ -111,6 +111,7 @@ def reset_game():
     state.ending_cinematic = False
     state.stamina = 100
     state.is_sprinting = False
+    state.player_has_moved = False
 
 
 def kill_player(reason):
@@ -291,7 +292,7 @@ def handle_safe_key(event):
 
 def get_interact_prompt():
     if state.day == 5:
-        if state.corridor_exit_open and distance(state.player_x, state.player_y, 1.5, CORRIDOR_LENGTH - 1.5) < 1.2:
+        if state.corridor_exit_open and distance(state.player_x, state.player_y, 2.0, CORRIDOR_LENGTH - 1.5) < 1.2:
             return "Appuie sur E pour sortir"
         return None
     if state.day == 2:
@@ -311,10 +312,11 @@ def get_interact_prompt():
 
 def interact():
     if state.day == 5 and state.corridor_exit_open:
-        door_dist = distance(state.player_x, state.player_y, 1.5, CORRIDOR_LENGTH - 1.5)
+        door_dist = distance(state.player_x, state.player_y, 2.0, CORRIDOR_LENGTH - 1.5)
         if door_dist < 1.2:
             sounds.play_sound("door")
             sounds.stop_ambient_music()
+            state.monster_visible = False
             state.ending_cinematic = True
             state.ending_timer = 0.0
             state.game_finished = True
@@ -390,7 +392,7 @@ def next_day():
     state.day += 1
     state.day_timer = DAY_LIMIT
     if state.day == 5:
-        state.player_x = 1.5
+        state.player_x = 2.0
         state.player_y = 1.5
         state.player_a = math.pi / 2
     else:
@@ -414,11 +416,14 @@ def next_day():
         show_message("Jour 4 : coupure de courant. Trouve la boite electrique loin de la sortie.", 300)
     elif state.day == 5:
         state.ending_timer = 0
-        state.monster_x = 1.5
-        state.monster_y = 0.5
+        state.monster_x = 2.0
+        state.monster_y = 1.0
         state.chase_timer = 3.0
         state.stamina = 100
         state.is_sprinting = False
+        state.monster_visible = False
+        state.monster_scream_played = False
+        state.player_has_moved = False
         show_message("Jour 5 : cours jusqu'au fond du long couloir avant la fin du chrono.", 320)
     else:
         state.game_finished = True
@@ -476,16 +481,16 @@ def update_day_events(dt):
                 state.stuck_clicks = 0
                 state.sand_damage_timer = 0.0
                 s["used"] = True
-                show_message("Le sable mou t'aspire ! Appuie vite sur ESPACE !", 260)
+                show_message("Le sol t'aspire, appuie sur éspace pour t'en éxtraire !", 260)
 
     if state.day == 3 and state.stuck:
         state.sand_damage_timer += dt
         if state.sand_damage_timer >= 2.0:
             state.sand_damage_timer -= 2.0
             state.player_health -= 1
-            show_message("Le sable mou t'etouffe. -1 PV", 150)
+            show_message("Le sol t'etouffe. -1 PV", 150)
             if state.player_health <= 0:
-                kill_player("Tu es reste trop longtemps dans le sable mou.")
+                kill_player("Tu à traversé le sol.")
                 return
 
     if state.day == 4 and not state.power_fixed:
@@ -523,21 +528,36 @@ def update_day_events(dt):
         state.shake = 18
 
     if state.day == 5 and not state.ending_cinematic:
+        # Detect player starting to move
+        if not state.player_has_moved:
+            if state.player_y > 1.52 or state.player_x != 2.0:
+                state.player_has_moved = True
+
+        if state.player_has_moved:
+            # Monster appears after 3 seconds
+            if state.chase_timer > 0:
+                state.chase_timer -= dt
+                if state.chase_timer <= 0:
+                    state.monster_visible = True
+                    if not state.monster_scream_played:
+                        sounds.play_sound("monster_scream")
+                        state.monster_scream_played = True
+                    show_message("Il est derriere toi ! Ne t'arrete pas !", 180)
+                    state.shake = 12
+            else:
+                if state.monster_visible:
+                    # Monster moves at the same speed as the player
+                    from config import WALK_SPEED, SPRINT_SPEED
+                    m_speed = SPRINT_SPEED if state.is_sprinting else WALK_SPEED
+                    dy = state.player_y - state.monster_y
+                    dist = abs(dy)
+                    if dist > 0.2:
+                        state.monster_y += math.copysign(m_speed, dy)
+                        if wall_at(state.monster_x, state.monster_y):
+                            state.monster_y -= math.copysign(m_speed, dy)
+                    state.heartbeat = max(0, 6 - dist)
+                    if dist < 0.55 and state.player_health != 999:
+                        kill_player("Le monstre t'a rattrape. Tu recommences depuis le debut.")
         state.stamina = max(0, min(100, state.stamina + (-30 if state.is_sprinting else 18) * dt))
         if state.stamina <= 0:
             state.is_sprinting = False
-        if state.chase_timer > 0:
-            state.chase_timer -= dt
-            if state.chase_timer <= 0:
-                show_message("Il est derriere toi ! Ne t'arrete pas !", 180)
-                state.shake = 12
-        else:
-            dy = state.player_y - state.monster_y
-            dist = abs(dy)
-            if dist > 0.2:
-                state.monster_y += math.copysign(0.085, dy)
-                if wall_at(state.monster_x, state.monster_y):
-                    state.monster_y -= math.copysign(0.085, dy)
-            state.heartbeat = max(0, 6 - dist)
-            if dist < 0.55 and state.player_health != 999:
-                kill_player("Le monstre t'a rattrape. Tu recommences depuis le debut.")

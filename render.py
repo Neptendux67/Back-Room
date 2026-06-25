@@ -28,7 +28,7 @@ _FPS_DISPLAY = 0
 
 
 def load_textures():
-    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF, MONSTER_FRAMES
+    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF, MONSTER_FRAMES, MONSTER_FW, MONSTER_FH
     tex_dir = os.path.join(os.path.dirname(__file__), "assets", "textures")
     path = os.path.join(tex_dir, "Wall-Texture.png")
     try:
@@ -58,12 +58,17 @@ def load_textures():
         mon_path = os.path.join(tex_dir, "Monster-Spritesheet.png")
         mon_surf = pygame.image.load(mon_path).convert_alpha()
         mw, mh = mon_surf.get_width(), mon_surf.get_height()
-        nframes = mw // MONSTER_FW
-        MONSTER_FRAMES = []
-        for i in range(nframes):
-            frame = mon_surf.subsurface((i * MONSTER_FW, 0, MONSTER_FW, MONSTER_FH))
-            MONSTER_FRAMES.append(frame)
-    except Exception:
+        if mw >= mh * 2:
+            MONSTER_FW = mw // 4
+            MONSTER_FH = mh
+            MONSTER_FRAMES = []
+            for i in range(4):
+                frame = mon_surf.subsurface((i * MONSTER_FW, 0, MONSTER_FW, MONSTER_FH))
+                MONSTER_FRAMES.append(frame)
+        else:
+            MONSTER_FRAMES = [mon_surf]
+    except Exception as e:
+        print("Warning: Could not load monster texture:", e)
         MONSTER_FRAMES = None
 
 
@@ -322,7 +327,11 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
 
     screen_x = WIDTH // 2 + int(math.tan(delta) * WIDTH)
     sprite_h = max(8, min(HEIGHT * 2, int(HEIGHT / dist * size)))
-    sprite_w = max(8, min(WIDTH, sprite_h // 2))
+    if shape == "monster" and MONSTER_FRAMES:
+        aspect = MONSTER_FRAMES[0].get_width() / MONSTER_FRAMES[0].get_height()
+        sprite_w = max(8, min(WIDTH, int(sprite_h * aspect)))
+    else:
+        sprite_w = max(8, min(WIDTH, sprite_h // 2))
 
     y = HEIGHT // 2 - sprite_h // 2 + state.look_pitch
     rect = pygame.Rect(screen_x - sprite_w // 2, y, sprite_w, sprite_h)
@@ -465,9 +474,9 @@ def draw_objects(depth_buffer):
         draw_sprite(EXIT_X, EXIT_Y, (70, 115, 160), 0.95, "sortie", "door", depth_buffer)
     else:
         if state.corridor_exit_open:
-            draw_sprite(1.5, CORRIDOR_LENGTH - 1.5, (255, 220, 50), 1.3, "SORTIE - Entre vite !", "door", depth_buffer)
+            draw_sprite(2.0, CORRIDOR_LENGTH - 1.5, (255, 220, 50), 1.3, "SORTIE - Entre vite !", "door", depth_buffer)
         else:
-            draw_sprite(1.5, CORRIDOR_LENGTH - 1.5, (60, 55, 45), 1.1, "porte (verrouillee)", "door", depth_buffer)
+            draw_sprite(2.0, CORRIDOR_LENGTH - 1.5, (60, 55, 45), 1.1, "porte (verrouillee)", "door", depth_buffer)
 
     for window in state.windows:
         draw_sprite(window["x"], window["y"], (160, 200, 235), window["size"], None, "window", depth_buffer)
@@ -505,7 +514,7 @@ def draw_objects(depth_buffer):
         if not state.power_fixed:
             draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
-    if state.day == 5 and not state.ending_cinematic:
+    if state.day == 5 and not state.ending_cinematic and state.monster_visible:
         draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
 
@@ -843,7 +852,7 @@ def draw_safe_panel():
 
 
 def draw_ending():
-    from config import screen, BIG
+    from config import screen, BIG, FONT, SMALL
     t = pygame.time.get_ticks() / 1000
     screen.fill((190, 170, 70))
 
@@ -860,17 +869,66 @@ def draw_ending():
 
     if state.ending_timer < 2:
         text = "..."
+        txt = BIG.render(text, True, (30, 25, 10))
+        screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - 40))
     elif state.ending_timer < 4:
         text = "Tu ouvres les yeux."
+        txt = BIG.render(text, True, (30, 25, 10))
+        screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - 40))
     elif state.ending_timer < 6:
         text = "Les murs jaunes ne sont plus là."
+        txt = BIG.render(text, True, (30, 25, 10))
+        screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - 40))
     elif state.ending_timer < 8:
         text = "Bienvenue dans la Réalité."
-    else:
+        txt = BIG.render(text, True, (30, 25, 10))
+        screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - 40))
+    elif state.ending_timer < 11.0:
         text = "FIN"
-
-    txt = BIG.render(text, True, (30, 25, 10))
-    screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - 40))
+        txt = BIG.render(text, True, (30, 25, 10))
+        screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - 40))
+    else:
+        time_since_credits = state.ending_timer - 11.0
+        
+        # Smoothly fade to a darker black overlay for credits readability
+        bg_dim = min(230, 180 + int(time_since_credits * 40))
+        credits_overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        credits_overlay.fill((0, 0, 0, bg_dim))
+        screen.blit(credits_overlay, (0, 0))
+        
+        # Credits data: (text, font, color)
+        credits_data = [
+            ("FIN", BIG, (255, 230, 120)),
+            ("", FONT, (0, 0, 0)),
+            ("", FONT, (0, 0, 0)),
+            ("avec la participation de", SMALL, (170, 170, 170)),
+            ("Mossard Studio & Play to Code Studio", FONT, (240, 240, 240)),
+            ("", FONT, (0, 0, 0)),
+            ("codé et développé par", SMALL, (170, 170, 170)),
+            ("Noha & Anthony", FONT, (240, 240, 240)),
+            ("", FONT, (0, 0, 0)),
+            ("son et textures", SMALL, (170, 170, 170)),
+            ("Kerim & Mikael", FONT, (240, 240, 240)),
+            ("", FONT, (0, 0, 0)),
+            ("accompagnement personnel et leak du code source", SMALL, (170, 170, 170)),
+            ("A un gars random dans le tram Luiai", FONT, (255, 220, 100)),
+        ]
+        
+        scroll_speed = 52.0  # pixels per second
+        start_y = HEIGHT - 80
+        y_offset = int(time_since_credits * scroll_speed)
+        
+        for i, (text_line, font, color) in enumerate(credits_data):
+            if not text_line:
+                continue
+            line_y = start_y - y_offset + i * 55
+            if -50 < line_y < HEIGHT + 50:
+                txt = font.render(text_line, True, color)
+                screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, line_y))
+                
+        # Draw skip/quit tip
+        tip = SMALL.render("Appuie sur ESC pour retourner au menu principal", True, (120, 120, 120))
+        screen.blit(tip, (WIDTH // 2 - tip.get_width() // 2, HEIGHT - 60))
 
 
 def draw_game_over():
@@ -1249,11 +1307,11 @@ def handle_debug_click(pos):
             state.ending_cinematic = False
             state.corridor_exit_open = False
             if d == 5:
-                state.player_x = 2.5
+                state.player_x = 2.0
                 state.player_y = 1.5
                 state.player_a = math.pi / 2
-                state.monster_x = 2.5
-                state.monster_y = 0.5
+                state.monster_x = 2.0
+                state.monster_y = 1.0
                 state.chase_timer = 3.0
             else:
                 state.player_x = 1.5

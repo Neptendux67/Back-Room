@@ -68,3 +68,7 @@ debug_menu_open = False
 chase_timer = 0.0
 stamina = 100
 is_sprinting = False
+monster_visible = False
+monster_scream_played = False
+player_has_moved = False
+

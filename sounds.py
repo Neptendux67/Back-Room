@@ -23,6 +23,7 @@ AUDIO_FILES = {
     "foot": "footsteps.wav",
     "ending": "ending.wav",
     "main_menu": "main_menu.wav",
+    "monster_scream": "monstre_cri.mp3",
 }
 
 
