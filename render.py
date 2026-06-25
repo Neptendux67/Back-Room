@@ -170,25 +170,27 @@ def cast_rays():
         else:
             depth = MAX_DEPTH
 
-        depth = min(depth, MAX_DEPTH)
-        wall_h = min(HEIGHT * 2, int(HEIGHT / (depth + 0.0001)))
-
         if side == 0:
             wall_x = py + depth * sin_a
         else:
             wall_x = px + depth * cos_a
         wall_x -= math.floor(wall_x)
 
+        # Correct fish-eye effect (project Euclidean distance onto player's view vector)
+        depth_corrected = depth * math.cos(ray_angle - state.player_a)
+        depth_corrected = min(depth_corrected, MAX_DEPTH)
+        wall_h = min(HEIGHT * 2, int(HEIGHT / (depth_corrected + 0.0001)))
+
         x_screen = int(ray * WIDTH / RAYS)
         w = int(WIDTH / RAYS) + 1
         x_end = min(WIDTH, x_screen + w)
         camera_z = getattr(state, "camera_z", 0.0)
         horizon = HEIGHT // 2 + state.look_pitch
-        y1 = int(horizon - ((0.5 - camera_z) / (depth + 0.0001)) * HEIGHT)
+        y1 = int(horizon - ((0.5 - camera_z) / (depth_corrected + 0.0001)) * HEIGHT)
         y2 = y1 + wall_h
 
         for sx in range(max(0, x_screen), x_end):
-            depth_buffer[sx] = min(depth_buffer[sx], depth)
+            depth_buffer[sx] = min(depth_buffer[sx], depth_corrected)
 
         shade = max(0.12, 1.0 - depth / MAX_DEPTH * 0.92)
         if state.day == 4 and not state.power_fixed:
