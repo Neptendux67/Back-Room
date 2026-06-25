@@ -86,8 +86,6 @@ def draw_floor_ceiling():
     if ceil_h > 0:
         ceil_color = (25, 22, 15) if state.day == 4 and not state.power_fixed else (185, 175, 130)
         screen.fill(ceil_color, (0, 0, WIDTH, ceil_h))
-        ceil_color = (25, 22, 15) if state.day == 4 and not state.power_fixed else (185, 175, 130)
-        screen.fill(ceil_color, (0, 0, WIDTH, ceil_h))
 
     if state.day != 4 or state.power_fixed:
         for x in range(0, WIDTH, 209):

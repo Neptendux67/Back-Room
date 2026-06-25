@@ -16,10 +16,10 @@ AUDIO_FILES = {
     "bang": "bang.wav",
     "interact": "interact.wav",
     "repair": "repair.wav",
-    "electricite": "electricite.wav",
+    "electricite": "electricity.wav",
     "door": "door.wav",
-    "clef": "clef.wav",
-    "foot": "foot.wav",
+    "clef": "key-collect.wav",
+    "foot": "footsteps.wav",
 }
 
 
