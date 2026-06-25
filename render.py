@@ -573,7 +573,10 @@ def make_cuboid_faces(cu, cv, cw, su, sv, sw, color, death_x, death_y, death_a):
         dist_shade = max(0.12, 1.0 - face_depth / MAX_DEPTH * 0.92)
         if state.day == 4 and not state.power_fixed:
             dist_shade *= 0.25
-        final_shade = c_shade * dist_shade
+        if color == (255, 30, 30):
+            final_shade = 1.0
+        else:
+            final_shade = c_shade * dist_shade
         
         face_color = (
             max(0, min(255, int(color[0] * final_shade))),
@@ -646,24 +649,47 @@ def draw_3d_monster(depth_buffer):
     monster_y = state.monster_y
     monster_a = math.atan2(state.death_pos_y - state.monster_y, state.death_pos_x - state.monster_x)
     
-    # 3D cuboids representing a sitting slender humanoid entity (scaled 2x smaller)
+    # 3D cuboids representing a highly detailed, slender organic sitting entity (scaled 2x smaller)
     cuboids = [
-        # Torso (slender, vertical)
-        (0.0, 0.0, 0.25, 0.06, 0.08, 0.15, (25, 25, 28)),
+        # Lower Torso (Pelvis)
+        (-0.02, 0.0, 0.16, 0.05, 0.06, 0.04, (20, 20, 22)),
+        # Upper Torso (Chest/Ribs, leaning forward)
+        (0.04, 0.0, 0.28, 0.06, 0.07, 0.08, (25, 25, 28)),
+        # Spine Ridges (creepy horizontal spikes on the back)
+        (-0.04, 0.0, 0.28, 0.02, 0.04, 0.02, (15, 15, 18)),
+        (-0.02, 0.0, 0.22, 0.02, 0.04, 0.02, (15, 15, 18)),
+        # Neck
+        (0.05, 0.0, 0.38, 0.03, 0.03, 0.04, (20, 20, 22)),
         # Head
-        (0.02, 0.0, 0.46, 0.06, 0.06, 0.06, (18, 18, 20)),
-        # Left Thigh
-        (0.12, -0.06, 0.10, 0.10, 0.04, 0.04, (22, 22, 24)),
-        # Right Thigh
-        (0.12, 0.06, 0.10, 0.10, 0.04, 0.04, (22, 22, 24)),
-        # Left Shin
-        (0.22, -0.06, 0.05, 0.04, 0.04, 0.10, (18, 18, 20)),
-        # Right Shin
-        (0.22, 0.06, 0.05, 0.04, 0.04, 0.10, (18, 18, 20)),
-        # Left Arm
-        (0.06, -0.12, 0.20, 0.04, 0.03, 0.15, (20, 20, 22)),
-        # Right Arm
-        (0.06, 0.12, 0.20, 0.04, 0.03, 0.15, (20, 20, 22)),
+        (0.06, 0.0, 0.44, 0.05, 0.05, 0.05, (18, 18, 20)),
+        # Left Eye (Glowing Red, color (255, 30, 30) to bypass shading)
+        (0.11, -0.02, 0.45, 0.01, 0.01, 0.01, (255, 30, 30)),
+        # Right Eye (Glowing Red, color (255, 30, 30) to bypass shading)
+        (0.11, 0.02, 0.45, 0.01, 0.01, 0.01, (255, 30, 30)),
+        # Left Horn
+        (0.04, -0.05, 0.51, 0.02, 0.01, 0.04, (15, 15, 18)),
+        # Right Horn
+        (0.04, 0.05, 0.51, 0.02, 0.01, 0.04, (15, 15, 18)),
+        # Left Thigh (extending forward)
+        (0.08, -0.07, 0.13, 0.09, 0.03, 0.03, (22, 22, 24)),
+        # Right Thigh (extending forward)
+        (0.08, 0.07, 0.13, 0.09, 0.03, 0.03, (22, 22, 24)),
+        # Left Shin (extending down)
+        (0.18, -0.07, 0.06, 0.03, 0.03, 0.08, (18, 18, 20)),
+        # Right Shin (extending down)
+        (0.18, 0.07, 0.06, 0.03, 0.03, 0.08, (18, 18, 20)),
+        # Left Upper Arm
+        (0.04, -0.11, 0.30, 0.04, 0.03, 0.09, (20, 20, 22)),
+        # Right Upper Arm
+        (0.04, 0.11, 0.30, 0.04, 0.03, 0.09, (20, 20, 22)),
+        # Left Forearm
+        (0.08, -0.11, 0.15, 0.03, 0.03, 0.09, (18, 18, 20)),
+        # Right Forearm
+        (0.08, 0.11, 0.15, 0.03, 0.03, 0.09, (18, 18, 20)),
+        # Left Claws/Fingers
+        (0.11, -0.11, 0.05, 0.03, 0.04, 0.02, (15, 15, 18)),
+        # Right Claws/Fingers
+        (0.11, 0.11, 0.05, 0.03, 0.04, 0.02, (15, 15, 18)),
     ]
     
     all_faces = []
