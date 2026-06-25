@@ -718,9 +718,9 @@ def draw_ending():
     elif state.ending_timer < 4:
         text = "Tu ouvres les yeux."
     elif state.ending_timer < 6:
-        text = "L'appartement n'est plus la."
+        text = "Les murs jaunes ne sont plus là."
     elif state.ending_timer < 8:
-        text = "Bienvenue dans les Backrooms."
+        text = "Bienvenue dans la Réalité."
     else:
         text = "FIN"
 
@@ -837,10 +837,10 @@ def draw_intro_cinematic():
         line2 = ""
     elif t < 7.4:
         line1 = "Pour survivre, tu devras accomplir des taches."
-        line2 = "Mais tu n'as que 3 jours."
+        line2 = "Mais tu n'as que 1 minutes pour 5 jours."
     else:
         line1 = "Voyons si tu es digne"
-        line2 = "de sauver le monde."
+        line2 = "de t'échappé."
 
     text1 = BIG.render(line1, True, (255, 242, 170))
     screen.blit(text1, (WIDTH // 2 - text1.get_width() // 2, HEIGHT // 2 - 66))
@@ -901,8 +901,8 @@ def draw_menu():
     for x in range(0, WIDTH, 90):
         pygame.draw.line(screen, (62, 48, 30), (x, HEIGHT), (x + 140, 0), 1)
 
-    title = BIG.render("AVANT BACKROOM", True, (245, 222, 142))
-    subtitle = FONT.render("Appartement anormal - 5 jours", True, (230, 226, 210))
+    title = BIG.render("BACKROOM :", True, (245, 222, 142))
+    subtitle = BIG.render("One Minute to Escape", True, (245, 222, 142))
     screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 167))
     screen.blit(subtitle, (WIDTH // 2 - subtitle.get_width() // 2, 268))
 
