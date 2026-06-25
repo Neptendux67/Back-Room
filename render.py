@@ -185,7 +185,7 @@ def cast_rays():
         camera_z = getattr(state, "camera_z", 0.0)
         horizon = HEIGHT // 2 + state.look_pitch
         y1 = int(horizon - ((0.5 - camera_z) / (depth + 0.0001)) * HEIGHT)
-        y2 = int(horizon + ((0.5 + camera_z) / (depth + 0.0001)) * HEIGHT)
+        y2 = y1 + wall_h
 
         for sx in range(max(0, x_screen), x_end):
             depth_buffer[sx] = min(depth_buffer[sx], depth)
