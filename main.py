@@ -34,6 +34,7 @@ pygame.event.set_grab(False)
 
 def enter_menu():
     state.game_state = "menu"
+    sounds.stop_all_sounds()
     sounds.start_menu_music()
 
 
@@ -42,7 +43,8 @@ def start_game(reset=True):
         game.reset_game()
     render.clear_pause_bg()
     state.game_state = "playing"
-    sounds.stop_menu_music()
+    sounds.stop_all_sounds()
+    sounds.start_ambient_music()
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
     pygame.mouse.get_rel()
@@ -58,6 +60,7 @@ def start_intro():
     pygame.event.set_grab(True)
     pygame.mouse.get_rel()
     sounds.stop_menu_music()
+    sounds.start_ambient_music()
     sounds.play_sound("click")
 
 
@@ -270,6 +273,10 @@ while running:
 
                 if event.key == pygame.K_e and not state.cable_panel_open and not state.safe_panel_open:
                     game.interact()
+
+        if state.game_finished and event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            sounds.stop_all_sounds()
+            enter_menu()
 
     if state.debug_menu_open:
         render.draw_debug_menu()

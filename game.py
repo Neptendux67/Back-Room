@@ -113,6 +113,7 @@ def reset_game():
 
 def kill_player(reason):
     sounds.update_footsteps(False)
+    sounds.stop_ambient_music()
     state.death_message = reason
     if state.cable_panel_open:
         close_cable_panel()
@@ -307,6 +308,7 @@ def interact():
         door_dist = distance(state.player_x, state.player_y, 2.5, CORRIDOR_LENGTH - 1.5)
         if door_dist < 1.2:
             sounds.play_sound("door")
+            sounds.stop_ambient_music()
             state.ending_cinematic = True
             state.ending_timer = 0.0
             state.game_finished = True

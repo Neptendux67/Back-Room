@@ -139,3 +139,26 @@ def stop_menu_music():
     if sound_available:
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
+
+
+def stop_all_sounds():
+    if sound_available:
+        pygame.mixer.stop()
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
+
+
+def start_ambient_music():
+    if not sound_available or not sound_enabled:
+        return
+    path = os.path.join(_audio_dir(), "ambient-music.wav")
+    if os.path.isfile(path):
+        pygame.mixer.music.load(path)
+        pygame.mixer.music.set_volume(music_volume * 0.15)
+        pygame.mixer.music.play(loops=-1)
+
+
+def stop_ambient_music():
+    if sound_available:
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()

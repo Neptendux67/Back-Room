@@ -467,10 +467,13 @@ def draw_objects(depth_buffer):
 def draw_crosshair():
     from config import screen
     cx, cy = WIDTH // 2, int(HEIGHT // 2 + state.look_pitch)
+
     pygame.draw.line(screen, (230, 230, 220), (cx - 8, cy), (cx - 3, cy), 1)
     pygame.draw.line(screen, (230, 230, 220), (cx + 3, cy), (cx + 8, cy), 1)
     pygame.draw.line(screen, (230, 230, 220), (cx, cy - 8), (cx, cy - 3), 1)
     pygame.draw.line(screen, (230, 230, 220), (cx, cy + 3), (cx, cy + 8), 1)
+
+
 
 
 def draw_ceiling_code_hint():
