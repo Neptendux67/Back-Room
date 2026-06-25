@@ -284,6 +284,38 @@ def unlock_safe():
         state.safe_unlocked = False
 
 
+def safe_panel_rects():
+    from config import WIDTH, HEIGHT
+    panel = pygame.Rect(WIDTH // 2 - 320, HEIGHT // 2 - 240, 640, 480)
+    keys = {}
+    for i in range(10):
+        col = i % 5
+        row = i // 5
+        key_rect = pygame.Rect(panel.left + 100 + col * 90, panel.top + 290 + row * 64, 60, 48)
+        keys[str(i)] = key_rect
+    return panel, keys
+
+
+def handle_safe_click(pos):
+    panel, keys = safe_panel_rects()
+    if not panel.collidepoint(pos):
+        return
+
+    for digit, rect in keys.items():
+        if rect.collidepoint(pos):
+            if len(state.safe_input) < len(state.safe_code):
+                state.safe_input += digit
+                sounds.play_sound("click")
+                if len(state.safe_input) == len(state.safe_code):
+                    if state.safe_input == state.safe_code:
+                        unlock_safe()
+                    else:
+                        state.safe_input = ""
+                        show_message("Code faux.", 150)
+                        sounds.play_sound("bang")
+            return
+
+
 def handle_safe_key(event):
     if event.key in (pygame.K_ESCAPE, pygame.K_e):
         close_safe_panel()

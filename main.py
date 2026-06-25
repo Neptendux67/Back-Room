@@ -228,8 +228,11 @@ while running:
                 start_game()
 
         elif state.game_state == "playing":
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and state.cable_panel_open:
-                game.handle_cable_click(event.pos)
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if state.cable_panel_open:
+                    game.handle_cable_click(event.pos)
+                elif state.safe_panel_open:
+                    game.handle_safe_click(event.pos)
 
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3 and not state.cable_panel_open and not state.safe_panel_open:
                 game.use_selected_item()

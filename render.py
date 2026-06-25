@@ -179,7 +179,7 @@ def cast_rays():
         # Correct fish-eye effect (project Euclidean distance onto player's view vector)
         depth_corrected = depth * math.cos(ray_angle - state.player_a)
         depth_corrected = min(depth_corrected, MAX_DEPTH)
-        wall_h = min(HEIGHT * 2, int(HEIGHT / (depth_corrected + 0.0001)))
+        wall_h = min(100000, int(HEIGHT / (depth_corrected + 0.0001)))
 
         x_screen = int(ray * WIDTH / RAYS)
         w = int(WIDTH / RAYS) + 1
@@ -208,7 +208,10 @@ def cast_rays():
             if draw_h > 0:
                 lo = y_start - y1
                 hi = lo + draw_h
-                idx = TEX_INDICES[wall_h][lo:hi]
+                if wall_h in TEX_INDICES:
+                    idx = TEX_INDICES[wall_h][lo:hi]
+                else:
+                    idx = (np.arange(lo, hi, dtype=np.float32) * (TEX_H - 1) / (wall_h - 1)).astype(np.uint16)
                 out = np.take(cols[tex_x], idx, axis=0)
                 if shade < 0.99:
                     out = (out * shade).astype(np.uint8)
