@@ -543,7 +543,6 @@ def draw_inventory_bar():
 
 def draw_ui():
     from config import screen, FONT, SMALL, BIG
-    pygame.draw.rect(screen, (0, 0, 0), (0, 0, WIDTH, 130))
     title = FONT.render("Jour " + str(state.day) + " / 5", True, (255, 235, 170))
     screen.blit(title, (30, 21))
     draw_health_bar()
