@@ -42,14 +42,14 @@ def draw_floor_ceiling():
 
     if state.day == 4 and not state.power_fixed:
         ceiling = (8, 8, 12)
-        floor_base = (50, 38, 10)
+        floor_base = (50, 45, 28)
     else:
         ceiling = (208, 207, 192)
-        floor_base = (196, 154, 42)
+        floor_base = (200, 180, 110)
 
     if state.day == 5:
         ceiling = (168, 158, 108)
-        floor_base = (196, 154, 42)
+        floor_base = (200, 180, 110)
 
     screen.fill(ceiling, (0, 0, WIDTH, max(0, horizon)))
     screen.fill(floor_base, (0, horizon, WIDTH, HEIGHT - horizon))
