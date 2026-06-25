@@ -32,10 +32,16 @@ pygame.mouse.set_visible(True)
 pygame.event.set_grab(False)
 
 
+def enter_menu():
+    state.game_state = "menu"
+    sounds.start_menu_music()
+
+
 def start_game(reset=True):
     if reset:
         game.reset_game()
     state.game_state = "playing"
+    sounds.stop_menu_music()
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
     pygame.mouse.get_rel()
@@ -49,6 +55,7 @@ def start_intro():
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
     pygame.mouse.get_rel()
+    sounds.stop_menu_music()
     sounds.play_sound("click")
 
 
@@ -64,6 +71,7 @@ def handle_menu_click(pos):
         return False
 
     if rects["quit"].collidepoint(pos):
+        sounds.stop_menu_music()
         return True
 
     return False
@@ -86,8 +94,20 @@ def handle_options_click(pos):
         sounds.play_sound("click")
         return
 
+    if rects["music_vol_down"].collidepoint(pos):
+        sounds.music_volume = max(0.0, round(sounds.music_volume - 0.1, 1))
+        sounds.start_menu_music()
+        sounds.play_sound("click")
+        return
+
+    if rects["music_vol_up"].collidepoint(pos):
+        sounds.music_volume = min(1.0, round(sounds.music_volume + 0.1, 1))
+        sounds.start_menu_music()
+        sounds.play_sound("click")
+        return
+
     if rects["back"].collidepoint(pos):
-        state.game_state = "menu"
+        enter_menu()
         sounds.play_sound("click")
         return
 
@@ -113,7 +133,7 @@ while running:
 
         if state.game_state == "options":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                state.game_state = "menu"
+                enter_menu()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 handle_options_click(event.pos)
 
@@ -121,7 +141,7 @@ while running:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                state.game_state = "menu"
+                enter_menu()
 
         elif state.game_state == "intro":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -184,7 +204,7 @@ while running:
     if state.game_state == "loading":
         state.loading_timer += dt
         if state.loading_timer >= config.LOADING_DURATION:
-            state.game_state = "menu"
+            enter_menu()
         render.draw_loading_screen()
         pygame.display.flip()
         continue
@@ -272,6 +292,7 @@ while running:
 
     pygame.display.flip()
 
+sounds.stop_menu_music()
 pygame.mouse.set_visible(True)
 pygame.event.set_grab(False)
 pygame.quit()

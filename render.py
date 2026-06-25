@@ -920,10 +920,12 @@ def menu_rects():
 def options_rects():
     center_x = WIDTH // 2
     return {
-        "sound": pygame.Rect(center_x - 165, 380, 330, 84),
-        "vol_down": pygame.Rect(center_x - 165, 500, 82, 80),
-        "vol_up": pygame.Rect(center_x + 83, 500, 82, 80),
-        "back": pygame.Rect(center_x - 165, 650, 330, 84),
+        "sound": pygame.Rect(center_x - 165, 340, 330, 60),
+        "vol_down": pygame.Rect(center_x - 165, 430, 82, 60),
+        "vol_up": pygame.Rect(center_x + 83, 430, 82, 60),
+        "music_vol_down": pygame.Rect(center_x - 165, 540, 82, 60),
+        "music_vol_up": pygame.Rect(center_x + 83, 540, 82, 60),
+        "back": pygame.Rect(center_x - 165, 660, 330, 60),
     }
 
 
@@ -985,7 +987,7 @@ def draw_options_menu():
         pygame.draw.line(screen, (62, 48, 30), (x, HEIGHT), (x + 140, 0), 1)
 
     title = FONT.render("Options", True, (245, 222, 142))
-    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 200))
+    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 170))
 
     rects = options_rects()
 
@@ -997,10 +999,25 @@ def draw_options_menu():
     draw_button(rects["vol_down"], "-", mouse_pos)
     draw_button(rects["vol_up"], "+", mouse_pos)
 
-    vol_box = pygame.Rect(WIDTH // 2 - 70, 500, 140, 80)
+    vol_box = pygame.Rect(WIDTH // 2 - 70, 430, 140, 60)
     pygame.draw.rect(screen, (12, 12, 13), vol_box, border_radius=8)
     pygame.draw.rect(screen, (132, 118, 78), vol_box, 2, border_radius=8)
     vol = FONT.render("Volume " + str(int(sounds.sound_volume * 100)) + "%", True, (238, 234, 215))
     screen.blit(vol, (vol_box.centerx - vol.get_width() // 2, vol_box.centery - vol.get_height() // 2))
+
+    eff_label = SMALL.render("Effets sonores", True, (190, 185, 165))
+    screen.blit(eff_label, (WIDTH // 2 - eff_label.get_width() // 2, 400))
+
+    draw_button(rects["music_vol_down"], "-", mouse_pos)
+    draw_button(rects["music_vol_up"], "+", mouse_pos)
+
+    music_box = pygame.Rect(WIDTH // 2 - 70, 540, 140, 60)
+    pygame.draw.rect(screen, (12, 12, 13), music_box, border_radius=8)
+    pygame.draw.rect(screen, (132, 118, 78), music_box, 2, border_radius=8)
+    music_vol_text = FONT.render("Volume " + str(int(sounds.music_volume * 100)) + "%", True, (238, 234, 215))
+    screen.blit(music_vol_text, (music_box.centerx - music_vol_text.get_width() // 2, music_box.centery - music_vol_text.get_height() // 2))
+
+    music_label = SMALL.render("Musique", True, (190, 185, 165))
+    screen.blit(music_label, (WIDTH // 2 - music_label.get_width() // 2, 510))
 
     draw_button(rects["back"], "Retour", mouse_pos)

@@ -10,6 +10,7 @@ foot_channel = None
 foot_is_playing = False
 sound_enabled = True
 sound_volume = 0.6
+music_volume = 0.5
 
 AUDIO_FILES = {
     "click": "click.wav",
@@ -21,6 +22,7 @@ AUDIO_FILES = {
     "clef": "key-collect.wav",
     "foot": "footsteps.wav",
     "ending": "ending.wav",
+    "main_menu": "main_menu.wav",
 }
 
 
@@ -117,3 +119,22 @@ def update_footsteps(is_walking):
         foot_is_playing = False
     elif should_play and foot_channel:
         foot_channel.set_volume(sound_volume)
+
+
+def start_menu_music():
+    if not sound_available or not sound_enabled:
+        return
+    if pygame.mixer.music.get_busy():
+        pygame.mixer.music.set_volume(music_volume)
+        return
+    path = os.path.join(_audio_dir(), "main_menu.wav")
+    if os.path.isfile(path):
+        pygame.mixer.music.load(path)
+        pygame.mixer.music.set_volume(music_volume)
+        pygame.mixer.music.play(loops=-1)
+
+
+def stop_menu_music():
+    if sound_available:
+        pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
