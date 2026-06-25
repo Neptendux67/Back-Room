@@ -68,15 +68,15 @@ def reset_cable_task():
 
 
 def reset_game():
-    state.player_x = 1.5
-    state.player_y = 9.5
-    state.player_a = 0.0
+    state.player_x = 2.0
+    state.player_y = 1.5
+    state.player_a = math.pi / 2
     state.look_pitch = 0
 
-    state.day = 1
+    state.day = 5
     state.day_timer = DAY_LIMIT
-    state.message = "Jour 1 : explore l'appartement. Un bruit arrive bientot..."
-    state.message_timer = 260
+    state.message = "Jour 5 : cours jusqu'au fond du long couloir avant la fin du chrono."
+    state.message_timer = 320
     state.shake = 0
     state.j1_event_done = False
     state.j1_timer = 4.0
@@ -100,8 +100,8 @@ def reset_game():
 
     state.power_fixed = False
     reset_cable_task()
-    state.monster_x = 12.5
-    state.monster_y = 1.5
+    state.monster_x = 2.0
+    state.monster_y = 1.0
     state.heartbeat = 0
 
     state.ending_timer = 0
@@ -117,6 +117,9 @@ def reset_game():
     state.death_pos_x = 0.0
     state.death_pos_y = 0.0
     state.death_pos_a = 0.0
+    state.chase_timer = 3.0
+    state.monster_visible = False
+    state.monster_scream_played = False
 
 
 def kill_player(reason):
