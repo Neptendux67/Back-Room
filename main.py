@@ -238,7 +238,7 @@ while running:
                 state.selected_inventory = (state.selected_inventory - event.y) % len(state.inventory_slots)
                 sounds.play_sound("click")
 
-            if event.type == pygame.MOUSEMOTION and not state.game_finished and not state.cable_panel_open and not state.safe_panel_open:
+            if event.type == pygame.MOUSEMOTION and not state.game_finished and not state.cable_panel_open and not state.safe_panel_open and not state.death_cinematic:
                 state.player_a += event.rel[0] * config.MOUSE_SENSITIVITY
                 state.look_pitch -= event.rel[1] * 1.1
                 state.look_pitch = int(max(-config.PITCH_LIMIT, min(config.PITCH_LIMIT, state.look_pitch)))
@@ -328,7 +328,7 @@ while running:
         else:
             speed = 0.050
 
-        if not state.stuck and not state.cable_panel_open and not state.safe_panel_open:
+        if not state.stuck and not state.cable_panel_open and not state.safe_panel_open and not state.death_cinematic:
             forward = keys[pygame.K_w] or keys[pygame.K_z]
             backward = keys[pygame.K_s]
             left = keys[pygame.K_a] or keys[pygame.K_q]
@@ -346,7 +346,15 @@ while running:
 
         sounds.update_footsteps(moving_now)
 
-    game.update_day_events(dt)
+    if state.death_cinematic:
+        state.death_timer += dt
+        if state.death_timer >= 4.5:
+            state.death_cinematic = False
+            state.game_state = "dead"
+            pygame.mouse.set_visible(True)
+            pygame.event.set_grab(False)
+    else:
+        game.update_day_events(dt)
 
     if state.game_state == "dead":
         render.draw_death_screen()
@@ -359,28 +367,52 @@ while running:
         sounds.update_footsteps(False)
         render.draw_game_over()
     else:
+        original_screen = config.screen
+        if state.death_cinematic:
+            temp_surf = pygame.Surface((config.WIDTH, config.HEIGHT))
+            config.screen = temp_surf
+            
         render.draw_floor_ceiling()
         depth_buffer = render.cast_rays()
         render.draw_objects(depth_buffer)
-        render.draw_player_body(moving_now)
-        render.draw_ceiling_code_hint()
-        render.draw_crosshair()
+        
+        if state.death_cinematic:
+            config.screen = original_screen
+            tilt_progress = min(1.0, state.death_timer / 1.5)
+            angle = tilt_progress * 78.0
+            
+            rotated = pygame.transform.rotate(temp_surf, angle)
+            rx = config.WIDTH // 2 - rotated.get_width() // 2
+            ry = config.HEIGHT // 2 - rotated.get_height() // 2
+            
+            config.screen.fill((8, 0, 0))
+            config.screen.blit(rotated, (rx, ry))
+            
+            # Red vignette blood fade-in
+            vignette = pygame.Surface((config.WIDTH, config.HEIGHT), pygame.SRCALPHA)
+            alpha = min(220, int(state.death_timer * 75))
+            vignette.fill((160, 0, 0, alpha))
+            config.screen.blit(vignette, (0, 0))
+        else:
+            render.draw_player_body(moving_now)
+            render.draw_ceiling_code_hint()
+            render.draw_crosshair()
 
-        if state.shake > 0:
-            state.shake -= 1
-            offset_x = random.randint(-state.shake, state.shake)
-            offset_y = random.randint(-state.shake, state.shake)
-            if not hasattr(config, '_shake_buf'):
-                config._shake_buf = pygame.Surface((config.WIDTH, config.HEIGHT))
-            config._shake_buf.blit(config.screen, (0, 0))
-            config.screen.fill((0, 0, 0))
-            config.screen.blit(config._shake_buf, (offset_x, offset_y))
+            if state.shake > 0:
+                state.shake -= 1
+                offset_x = random.randint(-state.shake, state.shake)
+                offset_y = random.randint(-state.shake, state.shake)
+                if not hasattr(config, '_shake_buf'):
+                    config._shake_buf = pygame.Surface((config.WIDTH, config.HEIGHT))
+                config._shake_buf.blit(config.screen, (0, 0))
+                config.screen.fill((0, 0, 0))
+                config.screen.blit(config._shake_buf, (offset_x, offset_y))
 
-        render.draw_ui()
-        if state.cable_panel_open:
-            render.draw_cable_panel()
-        if state.safe_panel_open:
-            render.draw_safe_panel()
+            render.draw_ui()
+            if state.cable_panel_open:
+                render.draw_cable_panel()
+            if state.safe_panel_open:
+                render.draw_safe_panel()
 
     if state.debug_menu_open:
         render.draw_debug_menu()

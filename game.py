@@ -112,6 +112,8 @@ def reset_game():
     state.stamina = 100
     state.is_sprinting = False
     state.player_has_moved = False
+    state.death_cinematic = False
+    state.death_timer = 0.0
 
 
 def kill_player(reason):
@@ -122,9 +124,15 @@ def kill_player(reason):
         close_cable_panel()
     if state.safe_panel_open:
         close_safe_panel()
-    state.game_state = "dead"
-    pygame.mouse.set_visible(True)
-    pygame.event.set_grab(False)
+        
+    state.death_cinematic = True
+    state.death_timer = 0.0
+    
+    # Place the monster in front of the player (facing them)
+    state.monster_x = state.player_x + math.cos(state.player_a) * 0.85
+    state.monster_y = state.player_y + math.sin(state.player_a) * 0.85
+    state.monster_visible = True
+    
     sounds.play_sound("bang")
 
 

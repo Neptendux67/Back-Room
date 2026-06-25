@@ -11,6 +11,7 @@ import game
 TEX_COLS = None
 TEX_SURF = None
 MONSTER_FRAMES = None
+MONSTER_SITTING_SURF = None
 MONSTER_FW = 48
 MONSTER_FH = 64
 TEX_W = 32
@@ -28,7 +29,7 @@ _FPS_DISPLAY = 0
 
 
 def load_textures():
-    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF, MONSTER_FRAMES, MONSTER_FW, MONSTER_FH
+    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF, MONSTER_FRAMES, MONSTER_FW, MONSTER_FH, MONSTER_SITTING_SURF
     tex_dir = os.path.join(os.path.dirname(__file__), "assets", "textures")
     path = os.path.join(tex_dir, "Wall-Texture.png")
     try:
@@ -59,10 +60,10 @@ def load_textures():
         mon_surf = pygame.image.load(mon_path).convert_alpha()
         mw, mh = mon_surf.get_width(), mon_surf.get_height()
         if mw > mh:
-            MONSTER_FW = mw // 4
+            MONSTER_FW = mw // 8
             MONSTER_FH = mh
             MONSTER_FRAMES = []
-            for i in range(4):
+            for i in range(8):
                 frame = mon_surf.subsurface((i * MONSTER_FW, 0, MONSTER_FW, MONSTER_FH))
                 MONSTER_FRAMES.append(frame)
         else:
@@ -70,6 +71,13 @@ def load_textures():
     except Exception as e:
         print("Warning: Could not load monster texture:", e)
         MONSTER_FRAMES = None
+
+    try:
+        sit_path = os.path.join(tex_dir, "Monster-Sitting.png")
+        MONSTER_SITTING_SURF = pygame.image.load(sit_path).convert_alpha()
+    except Exception as e:
+        print("Warning: Could not load sitting monster texture:", e)
+        MONSTER_SITTING_SURF = None
 
 
 def draw_floor_ceiling():
@@ -328,7 +336,10 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
     screen_x = WIDTH // 2 + int(math.tan(delta) * WIDTH)
     sprite_h = max(8, min(HEIGHT * 2, int(HEIGHT / dist * size)))
     if shape == "monster" and MONSTER_FRAMES:
-        aspect = MONSTER_FRAMES[0].get_width() / MONSTER_FRAMES[0].get_height()
+        if state.death_cinematic and MONSTER_SITTING_SURF:
+            aspect = MONSTER_SITTING_SURF.get_width() / MONSTER_SITTING_SURF.get_height()
+        else:
+            aspect = MONSTER_FRAMES[0].get_width() / MONSTER_FRAMES[0].get_height()
         sprite_w = max(8, min(WIDTH, int(sprite_h * aspect)))
     else:
         sprite_w = max(8, min(WIDTH, sprite_h // 2))
@@ -434,7 +445,14 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
         for tx, ty in teeth:
             pygame.draw.polygon(sprite, color_with_light((180, 160, 130), darkness), [(tx, ty), (tx + 3, ty - 6), (tx + 6, ty)])
     elif shape == "monster":
-        if MONSTER_FRAMES:
+        if state.death_cinematic and MONSTER_SITTING_SURF:
+            scaled = pygame.transform.scale(MONSTER_SITTING_SURF, (rect.width, rect.height))
+            if darkness < 1.0:
+                dark = pygame.Surface(scaled.get_size(), pygame.SRCALPHA)
+                dark.fill((0, 0, 0, int((1.0 - darkness) * 255)))
+                scaled.blit(dark, (0, 0), special_flags=pygame.BLEND_RGBA_SUB)
+            sprite.blit(scaled, (0, 0))
+        elif MONSTER_FRAMES:
             tick = pygame.time.get_ticks() / 1000
             frame_idx = int(tick * 6) % len(MONSTER_FRAMES)
             frame = MONSTER_FRAMES[frame_idx]
