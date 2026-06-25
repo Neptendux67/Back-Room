@@ -46,13 +46,25 @@ def near_exit():
 
 
 def try_move(dx, dy):
+    r = 0.22  # Bounding collision radius to prevent wall clipping and seeing through walls
+    
+    # Check X movement
     nx = state.player_x + dx
+    if dx > 0:
+        if not wall_at(nx + r, state.player_y - r) and not wall_at(nx + r, state.player_y + r):
+            state.player_x = nx
+    elif dx < 0:
+        if not wall_at(nx - r, state.player_y - r) and not wall_at(nx - r, state.player_y + r):
+            state.player_x = nx
+            
+    # Check Y movement
     ny = state.player_y + dy
-
-    if not wall_at(nx, state.player_y):
-        state.player_x = nx
-    if not wall_at(state.player_x, ny):
-        state.player_y = ny
+    if dy > 0:
+        if not wall_at(state.player_x - r, ny + r) and not wall_at(state.player_x + r, ny + r):
+            state.player_y = ny
+    elif dy < 0:
+        if not wall_at(state.player_x - r, ny - r) and not wall_at(state.player_x + r, ny - r):
+            state.player_y = ny
 
 
 def show_message(text, time=230):
