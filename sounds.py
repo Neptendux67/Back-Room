@@ -20,6 +20,7 @@ AUDIO_FILES = {
     "door": "door.wav",
     "clef": "key-collect.wav",
     "foot": "footsteps.wav",
+    "ending": "ending.wav",
 }
 
 

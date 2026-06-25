@@ -454,4 +454,4 @@ def update_day_events(dt):
             state.ending_cinematic = True
             state.ending_timer = 0.0
             state.game_finished = True
-            sounds.play_sound("door")
+            sounds.play_sound("ending")
