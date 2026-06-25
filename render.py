@@ -10,22 +10,19 @@ import game
 
 TEX_COLS = None
 TEX_SURF = None
-TEX_SKY_DATA = None
 TEX_W = 32
 TEX_H = 32
 TEX_INDICES = {}
 
 _COS_OFF = None
 _SIN_OFF = None
-
-_CEIL_SMALL = None
 _BODY_OVERLAY = None
 _SHADE_PANEL = None
 _PAUSE_BG = None
 
 
 def load_textures():
-    global TEX_COLS, TEX_SURF, TEX_SKY, TEX_SKY_DATA, TEX_W, TEX_H, _COS_OFF, _SIN_OFF
+    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF
     tex_dir = os.path.join(os.path.dirname(__file__), "assets", "textures")
     path = os.path.join(tex_dir, "Wall-Texture.png")
     try:
@@ -47,31 +44,9 @@ def load_textures():
         for h in range(1, HEIGHT * 2 + 1):
             TEX_INDICES[h] = np.linspace(0, TEX_H - 1, h, dtype=np.uint16)
 
-    ceil_path = os.path.join(tex_dir, "Ceilling-Texture.png")
-    try:
-        ceil_tex = pygame.image.load(ceil_path).convert()
-        TEX_SKY_DATA = surfarray.array3d(ceil_tex).astype(np.uint16)
-        ceil_w, ceil_h = ceil_tex.get_width(), ceil_tex.get_height()
-        TEX_SKY = pygame.Surface((WIDTH, HEIGHT))
-        for ty in range(0, HEIGHT, ceil_h):
-            for tx in range(0, WIDTH, ceil_w):
-                TEX_SKY.blit(ceil_tex, (tx, ty))
-    except Exception:
-        print("Warning: Could not load ceiling texture, using fallback")
-        fallback = pygame.Surface((32, 32))
-        fallback.fill((180, 150, 80))
-        TEX_SKY_DATA = surfarray.array3d(fallback).astype(np.uint16)
-        TEX_SKY = pygame.Surface((WIDTH, HEIGHT))
-        for ty in range(0, HEIGHT, 32):
-            for tx in range(0, WIDTH, 32):
-                TEX_SKY.blit(fallback, (tx, ty))
-
     off = np.arange(WIDTH, dtype=np.float32) / WIDTH * FOV - FOV / 2
     _COS_OFF = np.cos(off)
     _SIN_OFF = np.sin(off)
-
-    global _CEIL_SMALL
-    _CEIL_SMALL = pygame.Surface((WIDTH // 4, 1))
 
 
 def draw_floor_ceiling():
@@ -1062,7 +1037,6 @@ def draw_pause_menu():
         save_pause_bg()
     bg = _PAUSE_BG
     small = pygame.transform.scale(bg, (WIDTH // 6, HEIGHT // 6))
-    small = pygame.transform.gaussian_blur(small, 6)
     bg = pygame.transform.scale(small, (WIDTH, HEIGHT))
     screen.blit(bg, (0, 0))
 
