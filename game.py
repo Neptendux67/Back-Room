@@ -421,7 +421,7 @@ def check_exit():
 def update_day_events(dt):
     if not state.ending_cinematic:
         state.day_timer -= dt
-    if state.day_timer <= 0 and not state.ending_cinematic:
+    if state.day_timer <= 0 and not state.ending_cinematic and state.player_health != 999:
         kill_player("Le temps est ecoule. Tu recommences depuis le debut.")
         return
 
@@ -474,7 +474,7 @@ def update_day_events(dt):
 
         state.heartbeat = max(0, 6 - dist)
 
-        if dist < 0.55:
+        if dist < 0.55 and state.player_health != 999:
             show_message("Le monstre t'a touche. Tu te reveilles au debut du jour 4.", 300)
             if state.cable_panel_open:
                 close_cable_panel()
@@ -496,5 +496,5 @@ def update_day_events(dt):
             if wall_at(state.monster_x, state.monster_y):
                 state.monster_y -= math.copysign(speed, dy)
         state.heartbeat = max(0, 6 - dist)
-        if dist < 0.55:
+        if dist < 0.55 and state.player_health != 999:
             kill_player("Le monstre t'a rattrape. Tu recommences depuis le debut.")

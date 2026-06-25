@@ -1185,6 +1185,8 @@ def handle_debug_click(pos):
                 state.player_x = 2.5
                 state.player_y = 1.5
                 state.player_a = math.pi / 2
+                state.monster_x = 2.5
+                state.monster_y = 0.5
             else:
                 state.player_x = 1.5
                 state.player_y = 9.5
