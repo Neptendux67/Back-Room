@@ -19,7 +19,7 @@ except pygame.error:
     sounds.sound_available = False
 
 config.screen = pygame.display.set_mode((config.WIDTH, config.HEIGHT))
-pygame.display.set_caption("Backroom - Appartement Anormal...")
+pygame.display.set_caption("Backroom : One Minute to Escape")
 config.clock = pygame.time.Clock()
 
 config.FONT = pygame.font.SysFont("arial", 22)
