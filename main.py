@@ -41,6 +41,7 @@ pygame.event.set_grab(False)
 
 def enter_menu():
     state.game_state = "menu"
+    state.menu_timer = 0.0
     sounds.stop_all_sounds()
     sounds.start_menu_music()
 
@@ -76,6 +77,7 @@ def handle_menu_click(pos):
         return False
 
     if rects["options"].collidepoint(pos):
+        state.menu_timer = 0.0
         state.game_state = "options"
         sounds.play_sound("click")
         return False
@@ -358,11 +360,18 @@ while running:
         continue
 
     if state.game_state == "menu":
+        state.menu_timer += dt
         render.draw_menu()
+        if state.menu_timer < 1.0:
+            a = int((1.0 - state.menu_timer) * 255)
+            fade = pygame.Surface((config.WIDTH, config.HEIGHT), pygame.SRCALPHA)
+            fade.fill((0, 0, 0, a))
+            config.screen.blit(fade, (0, 0))
         pygame.display.flip()
         continue
 
     if state.game_state == "options":
+        state.menu_timer += dt
         render.draw_options_menu()
         pygame.display.flip()
         continue

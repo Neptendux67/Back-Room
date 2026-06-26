@@ -1503,27 +1503,122 @@ def draw_intro_cinematic():
     screen.blit(skip, (WIDTH - skip.get_width() - 18, HEIGHT - 34))
 
 
-def menu_rects():
-    center_x = WIDTH // 2
-    return {
-        "play": pygame.Rect(center_x - 165, 444, 330, 94),
-        "options": pygame.Rect(center_x - 165, 572, 330, 84),
-        "quit": pygame.Rect(center_x - 165, 815, 330, 84),
-    }
+_DUST = None
+_MENU_BG = None
+_MENU_HOVER_SOUND_PLAYED = {}
 
 
-def options_rects():
-    center_x = WIDTH // 2
-    return {
-        "vol_down": pygame.Rect(center_x - 165, 280, 82, 60),
-        "vol_up": pygame.Rect(center_x + 83, 280, 82, 60),
-        "music_vol_down": pygame.Rect(center_x - 165, 380, 82, 60),
-        "music_vol_up": pygame.Rect(center_x + 83, 380, 82, 60),
-        "music_track": pygame.Rect(center_x - 165, 480, 330, 60),
-        "fullscreen": pygame.Rect(center_x - 165, 570, 330, 60),
-        "resolution": pygame.Rect(center_x - 165, 660, 330, 60),
-        "back": pygame.Rect(center_x - 165, 750, 330, 60),
-    }
+def _init_dust():
+    global _DUST
+    _DUST = [{
+        "x": random.random() * WIDTH,
+        "y": random.random() * HEIGHT,
+        "vx": (random.random() - 0.5) * 0.25,
+        "vy": -(random.random() * 0.15 + 0.03),
+        "size": random.randint(1, 3),
+        "b": random.randint(60, 150),
+    } for _ in range(80)]
+
+
+def _draw_dust(screen, dt):
+    global _DUST
+    if _DUST is None:
+        _init_dust()
+    for p in _DUST:
+        p["x"] += p["vx"]
+        p["y"] += p["vy"]
+        if p["y"] < -5:
+            p["y"] = HEIGHT + 5
+            p["x"] = random.random() * WIDTH
+        screen.set_at((int(p["x"]), int(p["y"])), (p["b"], p["b"], p["b"], min(255, p["b"])))
+
+
+_VIGNETTE_SURF = None
+
+def _draw_atmosphere(screen, time):
+    global _VIGNETTE_SURF
+    if _VIGNETTE_SURF is None or _VIGNETTE_SURF.get_size() != (WIDTH, HEIGHT):
+        _VIGNETTE_SURF = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        for r in range(900, 0, -2):
+            a = max(0, 220 - (900 - r) * 2)
+            pygame.draw.circle(_VIGNETTE_SURF, (0, 0, 0, a), (WIDTH // 2, HEIGHT // 2), r)
+    screen.blit(_VIGNETTE_SURF, (0, 0))
+
+    flicker = random.random() < 0.04
+    if flicker:
+        f = random.uniform(0.6, 0.95)
+        sf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        sf.fill((int(200 * f), int(185 * f), int(140 * f), int(12 * f)))
+        screen.blit(sf, (0, 0))
+
+    scan_y = (time * 100) % 6
+    for i in range(HEIGHT // 6 + 2):
+        sy = int(scan_y + i * 6)
+        if sy < HEIGHT:
+            screen.fill((0, 0, 0, 18), (0, sy, WIDTH, 1))
+
+    if _DUST is None:
+        _init_dust()
+
+
+def _draw_menu_scene(screen, time):
+    global _MENU_BG
+    if _MENU_BG is None or _MENU_BG.get_size() != (WIDTH, HEIGHT):
+        saved = (state.day, state.player_x, state.player_y, state.player_a, state.look_pitch, state.power_fixed, state.ending_cinematic, state.game_finished, state.monster_visible)
+        state.day = 5
+        state.player_x = 1.8
+        state.player_y = 8.0
+        state.player_a = math.pi / 2
+        state.look_pitch = 0
+        state.power_fixed = True
+        state.ending_cinematic = False
+        state.game_finished = False
+        state.monster_visible = False
+        draw_floor_ceiling()
+        db = cast_rays()
+        draw_objects(db)
+        _MENU_BG = screen.copy()
+        state.day, state.player_x, state.player_y, state.player_a, state.look_pitch, state.power_fixed, state.ending_cinematic, state.game_finished, state.monster_visible = saved
+    else:
+        screen.blit(_MENU_BG, (0, 0))
+
+
+def _draw_title(screen, time):
+    from config import screen, BIG
+    pulse = 1.0 + math.sin(time * 0.8) * 0.02
+    alpha = min(1.0, time / 0.8)
+    glitch = random.random() < 0.015
+    glitch_off = random.randint(-3, 3) if glitch else 0
+
+    lines = [
+        (BIG, "BACKROOM :", (220, 195, 105), 0),
+        (BIG, "One Minute to Escape", (230, 230, 220), 55),
+    ]
+    for font, text, color, y_off in lines:
+        tw, th = font.size(text)
+        cx = WIDTH // 2 + glitch_off
+        cy = 165 + y_off + int(math.sin(time * 0.6 + y_off) * 2)
+
+        shadow = font.render(text, True, (10, 8, 5))
+        screen.blit(shadow, (cx - tw // 2 + 3, cy + 3))
+
+        glow = font.render(text, True, (200, 180, 80))
+        for gx, gy in [(0, 0), (0, 0)]:
+            gs = pygame.Surface((tw + 12, th + 12), pygame.SRCALPHA)
+            for i in range(8):
+                r = int(20 + 8 * math.sin(time * 2 + i * 0.8))
+                c = (200, 180, min(80 + i * 5, 200), max(0, 25 - i * 3))
+                pygame.draw.circle(gs, c, (tw // 2 + 6, th // 2 + 6), r)
+            screen.blit(gs, (cx - tw // 2 - 6, cy - 6))
+
+        text_surf = font.render(text, True, color)
+        if alpha < 1.0:
+            text_surf.set_alpha(int(alpha * 255))
+        screen.blit(text_surf, (cx - tw // 2, cy))
+
+        if glitch:
+            gh = random.randint(4, 16)
+            screen.fill((200, 190, 140, 180), (cx - tw // 2 - 10, cy + random.randint(-10, 10), tw + 20, gh))
 
 
 def draw_button(rect, text, mouse_pos, main=False):
@@ -1544,41 +1639,95 @@ def draw_button(rect, text, mouse_pos, main=False):
     screen.blit(label, (rect.centerx - label.get_width() // 2, rect.centery - label.get_height() // 2))
 
 
+def _draw_menu_button(screen, rect, text, mouse_pos, time, main=False):
+    from config import screen, FONT
+    hover = rect.collidepoint(mouse_pos)
+    scale = 1.02 + math.sin(time * 5) * 0.01 if hover else 1.0
+    if main:
+        base = (60, 55, 45) if not hover else (80, 72, 55)
+        border = (150, 135, 80) if not hover else (220, 195, 100)
+        text_color = (220, 210, 180) if not hover else (255, 245, 210)
+        glow_col = (220, 195, 100)
+    else:
+        base = (30, 31, 34) if not hover else (48, 50, 54)
+        border = (100, 92, 65) if not hover else (140, 130, 95)
+        text_color = (210, 205, 190) if not hover else (245, 240, 220)
+        glow_col = (140, 130, 95)
+
+    r = rect.inflate(int(rect.width * (scale - 1)), int(rect.height * (scale - 1)))
+    r.center = rect.center
+
+    if hover:
+        gs = pygame.Surface((r.width + 16, r.height + 16), pygame.SRCALPHA)
+        for i in range(6):
+            c = (*glow_col, max(0, 20 - i * 3))
+            pygame.draw.rect(gs, c, (8 - i, 8 - i, r.width + i * 2, r.height + i * 2), border_radius=10)
+        screen.blit(gs, (r.x - 8, r.y - 8))
+
+    pygame.draw.rect(screen, base, r, border_radius=8)
+    pygame.draw.rect(screen, border, r, 2, border_radius=8)
+
+    label = FONT.render(text, True, text_color)
+    screen.blit(label, (r.centerx - label.get_width() // 2, r.centery - label.get_height() // 2))
+
+    return hover
+
+
+def menu_rects():
+    center_x = WIDTH // 2
+    return {
+        "play": pygame.Rect(center_x - 165, 430, 330, 75),
+        "options": pygame.Rect(center_x - 165, 530, 330, 75),
+        "quit": pygame.Rect(center_x - 165, 630, 330, 75),
+    }
+
+
+def options_rects():
+    center_x = WIDTH // 2
+    return {
+        "vol_down": pygame.Rect(center_x - 165, 280, 82, 60),
+        "vol_up": pygame.Rect(center_x + 83, 280, 82, 60),
+        "music_vol_down": pygame.Rect(center_x - 165, 380, 82, 60),
+        "music_vol_up": pygame.Rect(center_x + 83, 380, 82, 60),
+        "music_track": pygame.Rect(center_x - 165, 480, 330, 60),
+        "fullscreen": pygame.Rect(center_x - 165, 570, 330, 60),
+        "resolution": pygame.Rect(center_x - 165, 660, 330, 60),
+        "back": pygame.Rect(center_x - 165, 750, 330, 60),
+    }
+
+
 def draw_menu():
     from config import screen, BIG, FONT, SMALL
     mouse_pos = pygame.mouse.get_pos()
-    screen.fill((20, 19, 17))
+    t = state.menu_timer
 
-    for y in range(0, HEIGHT, 58):
-        color = (35, 32, 25) if (y // 58) % 2 == 0 else (28, 27, 23)
-        pygame.draw.rect(screen, color, (0, y, WIDTH, 58))
-
-    for x in range(0, WIDTH, 90):
-        pygame.draw.line(screen, (62, 48, 30), (x, HEIGHT), (x + 140, 0), 1)
-
-    title = BIG.render("BACKROOM :", True, (220, 200, 110))
-    subtitle = BIG.render("One Minute to Escape", True, (230, 230, 220))
-    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 167))
-    screen.blit(subtitle, (WIDTH // 2 - subtitle.get_width() // 2, 268))
+    _draw_menu_scene(screen, t)
+    _draw_atmosphere(screen, t)
+    _draw_dust(screen, 1.0 / 60)
+    _draw_title(screen, t)
 
     rects = menu_rects()
-    draw_button(rects["play"], "Lancer la partie", mouse_pos, True)
-    draw_button(rects["options"], "Options", mouse_pos)
-    draw_button(rects["quit"], "Quitter", mouse_pos)
+    _draw_menu_button(screen, rects["play"], "Lancer la partie", mouse_pos, t, True)
+    _draw_menu_button(screen, rects["options"], "Options", mouse_pos, t)
+    _draw_menu_button(screen, rects["quit"], "Quitter", mouse_pos, t)
+
+    footer = SMALL.render("v1.0  |  Back-Room Studios  |  Tous droits reserves.", True, (60, 60, 65))
+    screen.blit(footer, (WIDTH // 2 - footer.get_width() // 2, HEIGHT - 35))
 
 
 def draw_options_menu():
     from config import screen, BIG, FONT, SMALL
     import sounds, settings
     mouse_pos = pygame.mouse.get_pos()
-    screen.fill((20, 19, 17))
+    t = state.menu_timer
 
-    for y in range(0, HEIGHT, 58):
-        color = (35, 32, 25) if (y // 58) % 2 == 0 else (28, 27, 23)
-        pygame.draw.rect(screen, color, (0, y, WIDTH, 58))
+    _draw_menu_scene(screen, t)
+    _draw_atmosphere(screen, t)
+    _draw_dust(screen, 1.0 / 60)
 
-    for x in range(0, WIDTH, 90):
-        pygame.draw.line(screen, (62, 48, 30), (x, HEIGHT), (x + 140, 0), 1)
+    s = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    s.fill((0, 0, 0, 200))
+    screen.blit(s, (0, 0))
 
     title = FONT.render("Options", True, (245, 222, 142))
     screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 170))

@@ -99,5 +99,6 @@ mongolian_unlocked = False
 shredder_cooldown = 0.0
 transition_timer = 0.0
 transition_active = False
+menu_timer = 0.0
 
 
