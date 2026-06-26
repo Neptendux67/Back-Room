@@ -1232,7 +1232,7 @@ def draw_ending():
             ("FIN", BIG, (255, 230, 120)),
             ("", FONT, (0, 0, 0)),
             ("", FONT, (0, 0, 0)),
-            ("Avec la participation de", SMALL, (170, 170, 170)),
+            ("Un jeu développé par", SMALL, (170, 170, 170)),
             ("Mossard Studio", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
             ("Développeur", SMALL, (170, 170, 170)),
