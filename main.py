@@ -146,7 +146,11 @@ def handle_options_click(pos):
 
     if rects["back"].collidepoint(pos):
         settings.save()
-        enter_menu()
+        if state.prev_state == "paused":
+            state.prev_state = None
+            state.game_state = "paused"
+        else:
+            enter_menu()
         sounds.play_sound("click")
         return
 
@@ -155,21 +159,11 @@ def handle_options_click(pos):
 
 
 def handle_pause_click(pos):
-    import settings
     rects = render.pause_menu_rects()
-
-    if rects["music_track"] and rects["music_track"].collidepoint(pos):
-        tracks = ["ambient-music", "mongolian-secret"]
-        cur = settings.get().get("music_track", "ambient-music")
-        idx = (tracks.index(cur) + 1) % len(tracks) if cur in tracks else 0
-        settings.get()["music_track"] = tracks[idx]
-        sounds.start_ambient_music(tracks[idx])
-        settings.save()
-        sounds.play_sound("click")
-        return
 
     if rects["resume"].collidepoint(pos):
         render.clear_pause_bg()
+        state.pause_submenu = None
         state.game_state = "playing"
         pygame.mouse.set_visible(False)
         pygame.event.set_grab(True)
@@ -177,28 +171,15 @@ def handle_pause_click(pos):
         sounds.play_sound("click")
         return
 
-    if rects["vol_down"].collidepoint(pos):
-        sounds.sound_volume = max(0.0, round(sounds.sound_volume - 0.1, 1))
-        sounds.play_sound("click")
-        return
-
-    if rects["vol_up"].collidepoint(pos):
-        sounds.sound_volume = min(1.0, round(sounds.sound_volume + 0.1, 1))
-        sounds.play_sound("click")
-        return
-
-    if rects["music_vol_down"].collidepoint(pos):
-        sounds.music_volume = max(0.0, round(sounds.music_volume - 0.1, 1))
-        sounds.play_sound("click")
-        return
-
-    if rects["music_vol_up"].collidepoint(pos):
-        sounds.music_volume = min(1.0, round(sounds.music_volume + 0.1, 1))
+    if rects["options"].collidepoint(pos):
+        state.prev_state = "paused"
+        state.game_state = "options"
         sounds.play_sound("click")
         return
 
     if rects["menu"].collidepoint(pos):
         render.clear_pause_bg()
+        state.pause_submenu = None
         sounds.play_sound("click")
         enter_menu()
         return
@@ -247,7 +228,11 @@ while running:
 
         if state.game_state == "options":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                enter_menu()
+                if state.prev_state == "paused":
+                    state.prev_state = None
+                    state.game_state = "paused"
+                else:
+                    enter_menu()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 handle_options_click(event.pos)
 
@@ -311,6 +296,7 @@ while running:
                     elif state.safe_panel_open:
                         game.close_safe_panel()
                     else:
+                        state.pause_submenu = None
                         state.game_state = "paused"
                         render.save_pause_bg()
                         pygame.mouse.set_visible(True)
@@ -379,7 +365,8 @@ while running:
     keys = pygame.key.get_pressed()
 
     if not state.game_finished:
-        state.is_sprinting = (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) and state.stamina > 0
+        can_sprint = state.day == 5 or state.stamina > 0
+        state.is_sprinting = (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) and can_sprint
         speed = config.SPRINT_SPEED if state.is_sprinting else config.WALK_SPEED
 
         if not state.stuck and not state.cable_panel_open and not state.safe_panel_open and not state.death_cinematic:
@@ -403,7 +390,7 @@ while running:
 
     if state.death_cinematic:
         state.death_timer += dt
-        if state.death_timer >= 4.5:
+        if state.death_timer >= 1.5:
             state.death_cinematic = False
             state.game_state = "dead"
             pygame.mouse.set_visible(True)
@@ -422,55 +409,16 @@ while running:
         sounds.update_footsteps(False)
         render.draw_game_over()
     else:
-        original_screen = config.screen
         if state.death_cinematic:
-            temp_surf = pygame.Surface((config.WIDTH, config.HEIGHT))
-            config.screen = temp_surf
-            
-            # Move camera back safely
-            dist = 2.0
-            while dist > 0.5:
-                cx = state.death_pos_x - math.cos(state.death_pos_a) * dist
-                cy = state.death_pos_y - math.sin(state.death_pos_a) * dist
-                if not game.wall_at(cx, cy):
-                    break
-                dist -= 0.15
-                
-            orig_px = state.player_x
-            orig_py = state.player_y
-            orig_pa = state.player_a
-            orig_pitch = state.look_pitch
-            orig_cz = getattr(state, "camera_z", 0.0)
-            
-            state.camera_z = 0.38
-            state.player_x = state.death_pos_x - math.cos(state.death_pos_a) * dist
-            state.player_y = state.death_pos_y - math.sin(state.death_pos_a) * dist
-            state.player_a = state.death_pos_a
-            
-            # Smooth look down tilt (look further down since camera is elevated)
-            look_down_progress = min(1.0, state.death_timer / 1.5)
-            state.look_pitch = int(-260 * look_down_progress)
-            
-        render.draw_floor_ceiling()
-        depth_buffer = render.cast_rays()
-        render.draw_objects(depth_buffer)
-        
-        if state.death_cinematic:
-            config.screen = original_screen
-            state.player_x = orig_px
-            state.player_y = orig_py
-            state.player_a = orig_pa
-            state.look_pitch = orig_pitch
-            state.camera_z = orig_cz
-            
-            config.screen.blit(temp_surf, (0, 0))
-            
-            # Red vignette blood fade-in
+            alpha = min(255, int(state.death_timer * 170))
+            config.screen.fill((0, 0, 0))
             vignette = pygame.Surface((config.WIDTH, config.HEIGHT), pygame.SRCALPHA)
-            alpha = min(220, int(state.death_timer * 75))
-            vignette.fill((160, 0, 0, alpha))
+            vignette.fill((80, 0, 0, alpha))
             config.screen.blit(vignette, (0, 0))
         else:
+            render.draw_floor_ceiling()
+            depth_buffer = render.cast_rays()
+            render.draw_objects(depth_buffer)
             render.draw_player_body(moving_now)
             render.draw_ceiling_code_hint()
             render.draw_crosshair()

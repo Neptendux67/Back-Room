@@ -17,7 +17,7 @@ STAMINA_DRAIN = 30
 STAMINA_REGEN = 18
 WALK_SPEED = 1.5      # tiles/s
 SPRINT_SPEED = 3.0    # tiles/s
-MONSTER_SPEED = 5.1   # tiles/s
+MONSTER_SPEED = 2.25  # tiles/s
 
 DAY_LIMIT = 60.0
 LOADING_DURATION = 10.0

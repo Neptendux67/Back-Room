@@ -1,7 +1,7 @@
 import math
 import random
 import pygame
-from config import DAY_LIMIT, MAX_HEALTH, APARTMENT_MAP, CORRIDOR_MAP, CORRIDOR_LENGTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, SHREDDER_X, SHREDDER_Y, FOV
+from config import DAY_LIMIT, MAX_HEALTH, APARTMENT_MAP, CORRIDOR_MAP, CORRIDOR_LENGTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, SHREDDER_X, SHREDDER_Y, FOV, MONSTER_SPEED
 import state
 import sounds
 
@@ -385,7 +385,7 @@ def interact():
             state.ending_cinematic = True
             state.ending_timer = 0.0
             state.game_finished = True
-            sounds.play_sound("ending")
+            sounds.start_ending_music()
             return
 
     if near_exit():
@@ -613,9 +613,7 @@ def update_day_events(dt):
                     state.shake = 12
             else:
                 if state.monster_visible:
-                    # Monster moves at the same speed as the player
-                    from config import WALK_SPEED, SPRINT_SPEED
-                    m_speed = (SPRINT_SPEED if state.is_sprinting else WALK_SPEED) * dt
+                    m_speed = MONSTER_SPEED * dt
                     dy = state.player_y - state.monster_y
                     dist = abs(dy)
                     if dist > 0.2:
@@ -625,7 +623,7 @@ def update_day_events(dt):
                     state.heartbeat = max(0, 6 - dist)
                     if dist < 0.55 and state.player_health != 999:
                         kill_player("Le monstre t'a rattrape. Tu recommences depuis le debut.")
-    if not state.ending_cinematic:
+    if not state.ending_cinematic and state.day != 5:
         state.stamina = max(0, min(100, state.stamina + (-30 if state.is_sprinting else 18) * dt))
         if state.stamina <= 0:
             state.is_sprinting = False

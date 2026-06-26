@@ -763,11 +763,7 @@ def draw_objects(depth_buffer):
         if not state.power_fixed:
             draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
-    if state.death_cinematic:
-        if state.day == 5:
-            draw_3d_monster(depth_buffer)
-        draw_3d_player(depth_buffer)
-    elif state.day == 5 and not state.ending_cinematic and state.monster_visible:
+    if state.day == 5 and not state.ending_cinematic and state.monster_visible:
         draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
 
@@ -978,7 +974,7 @@ def draw_ui():
             t = SMALL.render("Appuie sur E pour ouvrir la boite et relier rouge, jaune et bleu", True, (255, 240, 190))
             screen.blit(t, (WIDTH // 2 - t.get_width() // 2, HEIGHT - 260))
 
-    if not state.ending_cinematic:
+    if not state.ending_cinematic and state.day != 5:
         bar_w, bar_h = 216, 20
         sx, sy = 30, HEIGHT - 56
         pygame.draw.rect(screen, (20, 20, 25), (sx, sy, bar_w, bar_h), border_radius=5)
@@ -1427,13 +1423,9 @@ def draw_options_menu():
 def pause_menu_rects():
     center_x = WIDTH // 2
     return {
-        "vol_down": pygame.Rect(center_x - 146, 378, 70, 50),
-        "vol_up": pygame.Rect(center_x + 76, 378, 70, 50),
-        "music_vol_down": pygame.Rect(center_x - 146, 468, 70, 50),
-        "music_vol_up": pygame.Rect(center_x + 76, 468, 70, 50),
-        "music_track": pygame.Rect(center_x - 146, 548, 292, 56),
-        "resume": pygame.Rect(center_x - 146, 618, 292, 56),
-        "menu": pygame.Rect(center_x - 146, 688, 292, 56),
+        "resume": pygame.Rect(center_x - 146, 320, 292, 56),
+        "options": pygame.Rect(center_x - 146, 400, 292, 56),
+        "menu": pygame.Rect(center_x - 146, 480, 292, 56),
     }
 
 
@@ -1464,45 +1456,16 @@ def draw_pause_menu():
     overlay.fill((0, 0, 0, 70))
     screen.blit(overlay, (0, 0))
 
-    panel = pygame.Rect(WIDTH // 2 - 200, HEIGHT // 2 - 300, 400, 600)
+    panel = pygame.Rect(WIDTH // 2 - 200, HEIGHT // 2 - 260, 400, 520)
     pygame.draw.rect(screen, (22, 23, 25), panel, border_radius=12)
     pygame.draw.rect(screen, (190, 170, 104), panel, 3, border_radius=12)
 
+    rects = pause_menu_rects()
     title = FONT.render("PAUSE", True, (245, 222, 142))
     screen.blit(title, (WIDTH // 2 - title.get_width() // 2, panel.top + 30))
 
-    rects = pause_menu_rects()
-
-    draw_button(rects["vol_down"], "-", mouse_pos)
-    draw_button(rects["vol_up"], "+", mouse_pos)
-
-    vol_box = pygame.Rect(WIDTH // 2 - 64, 378, 128, 50)
-    pygame.draw.rect(screen, (12, 12, 13), vol_box, border_radius=8)
-    pygame.draw.rect(screen, (132, 118, 78), vol_box, 2, border_radius=8)
-    vol_text = FONT.render("Volume " + str(int(sounds.sound_volume * 100)) + "%", True, (238, 234, 215))
-    screen.blit(vol_text, (vol_box.centerx - vol_text.get_width() // 2, vol_box.centery - vol_text.get_height() // 2))
-
-    eff_label = SMALL.render("Effets sonores", True, (190, 185, 165))
-    screen.blit(eff_label, (WIDTH // 2 - eff_label.get_width() // 2, 355))
-
-    draw_button(rects["music_vol_down"], "-", mouse_pos)
-    draw_button(rects["music_vol_up"], "+", mouse_pos)
-
-    music_box = pygame.Rect(WIDTH // 2 - 64, 468, 128, 50)
-    pygame.draw.rect(screen, (12, 12, 13), music_box, border_radius=8)
-    pygame.draw.rect(screen, (132, 118, 78), music_box, 2, border_radius=8)
-    music_vol_text = FONT.render("Volume " + str(int(sounds.music_volume * 100)) + "%", True, (238, 234, 215))
-    screen.blit(music_vol_text, (music_box.centerx - music_vol_text.get_width() // 2, music_box.centery - music_vol_text.get_height() // 2))
-
-    music_label = SMALL.render("Musique", True, (190, 185, 165))
-    screen.blit(music_label, (WIDTH // 2 - music_label.get_width() // 2, 445))
-
-    import settings
-    track_label = settings.get().get("music_track", "ambient-music")
-    track_names = {"ambient-music": "Ambiance", "mongolian-secret": "Mongolian Secret"}
-    draw_button(rects["music_track"], f"Musique: {track_names.get(track_label, track_label)}", mouse_pos)
-
     draw_button(rects["resume"], "Reprendre", mouse_pos, True)
+    draw_button(rects["options"], "Options", mouse_pos)
     draw_button(rects["menu"], "Menu principal", mouse_pos)
 
 
