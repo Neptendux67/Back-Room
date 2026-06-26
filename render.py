@@ -762,7 +762,11 @@ def draw_objects(depth_buffer):
         if not state.power_fixed:
             draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
-    if state.day == 5 and not state.ending_cinematic and state.monster_visible:
+    if state.death_cinematic:
+        if state.day == 5:
+            draw_3d_monster(depth_buffer)
+        draw_3d_player(depth_buffer)
+    elif state.day == 5 and not state.ending_cinematic and state.monster_visible:
         draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
 

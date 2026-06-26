@@ -406,7 +406,7 @@ while running:
 
     if state.death_cinematic:
         state.death_timer += dt
-        if state.death_timer >= 0.8 and not state.game_finished:
+        if state.death_timer >= 4.5 and not state.game_finished:
             state.death_cinematic = False
             state.game_state = "dead"
             pygame.mouse.set_visible(True)
@@ -433,10 +433,42 @@ while running:
         sounds.update_footsteps(False)
         render.draw_game_over()
     else:
+        if state.death_cinematic:
+            # Move camera back safely
+            dist = 2.0
+            while dist > 0.5:
+                cx = state.death_pos_x - math.cos(state.death_pos_a) * dist
+                cy = state.death_pos_y - math.sin(state.death_pos_a) * dist
+                if not game.wall_at(cx, cy):
+                    break
+                dist -= 0.15
+                
+            orig_px = state.player_x
+            orig_py = state.player_y
+            orig_pa = state.player_a
+            orig_pitch = state.look_pitch
+            orig_cz = getattr(state, "camera_z", 0.0)
+            
+            state.camera_z = 0.38
+            state.player_x = state.death_pos_x - math.cos(state.death_pos_a) * dist
+            state.player_y = state.death_pos_y - math.sin(state.death_pos_a) * dist
+            state.player_a = state.death_pos_a
+            
+            # Smooth look down tilt (look further down since camera is elevated)
+            look_down_progress = min(1.0, state.death_timer / 1.5)
+            state.look_pitch = int(-260 * look_down_progress)
+
         render.draw_floor_ceiling()
         depth_buffer = render.cast_rays()
         render.draw_objects(depth_buffer)
-        if not state.death_cinematic:
+        
+        if state.death_cinematic:
+            state.player_x = orig_px
+            state.player_y = orig_py
+            state.player_a = orig_pa
+            state.look_pitch = orig_pitch
+            state.camera_z = orig_cz
+        else:
             render.draw_player_body(moving_now)
             render.draw_ceiling_code_hint()
             render.draw_crosshair()
