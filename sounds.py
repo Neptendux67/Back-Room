@@ -24,6 +24,7 @@ AUDIO_FILES = {
     "ending": "ending.wav",
     "main_menu": "main_menu.wav",
     "monster_scream": "monstre_cri.mp3",
+    "pickup_item": "pickup-item.wav",
 }
 
 
@@ -167,7 +168,7 @@ def start_ambient_music(track=None):
         pygame.mixer.music.stop()
         pygame.mixer.music.unload()
         pygame.mixer.music.load(path)
-        vol = music_volume * (0.50 if "mongolian" in track else 0.25)
+        vol = music_volume * (0.50 if "mongolian" in track else 0.50)
         pygame.mixer.music.set_volume(vol)
         pygame.mixer.music.play(loops=-1)
 

@@ -50,6 +50,7 @@ def start_game(reset=True):
         game.reset_game()
     render.clear_pause_bg()
     state.game_state = "playing"
+    state.level_intro_timer = 2.5
     sounds.stop_all_sounds()
     sounds.start_ambient_music()
     pygame.mouse.set_visible(False)
@@ -68,7 +69,6 @@ def start_intro():
     pygame.mouse.get_rel()
     sounds.stop_menu_music()
     sounds.start_ambient_music()
-    sounds.play_sound("click")
 
 
 def handle_menu_click(pos):
@@ -364,7 +364,7 @@ while running:
 
     keys = pygame.key.get_pressed()
 
-    if not state.game_finished:
+    if not state.game_finished and not state.transition_active:
         can_sprint = state.day == 5 or state.stamina > 0
         state.is_sprinting = (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) and can_sprint
         speed = config.SPRINT_SPEED if state.is_sprinting else config.WALK_SPEED
@@ -397,6 +397,11 @@ while running:
             pygame.event.set_grab(False)
     else:
         game.update_day_events(dt)
+
+    if state.transition_active:
+        state.transition_timer += dt
+        if state.transition_timer >= 3.0:
+            state.transition_active = False
 
     if state.game_state == "dead":
         render.draw_death_screen()
@@ -442,7 +447,9 @@ while running:
     if state.debug_menu_open:
         render.draw_debug_menu()
 
-    if state.game_state == "playing" or state.game_state == "dead":
+    render.draw_transition_overlay()
+
+    if state.game_state in ("playing", "dead", "intro"):
         render.apply_vhs_effect()
 
     pygame.display.flip()

@@ -58,6 +58,7 @@ heartbeat = 0
 ending_timer = 0
 loading_timer = 0.0
 intro_timer = 0.0
+level_intro_timer = 0.0
 game_finished = False
 game_state = "loading"
 ending_cinematic = False
@@ -78,5 +79,7 @@ death_pos_x = 0.0
 death_pos_y = 0.0
 death_pos_a = 0.0
 camera_z = 0.0
+transition_timer = 0.0
+transition_active = False
 
 

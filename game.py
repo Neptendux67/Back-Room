@@ -132,6 +132,9 @@ def reset_game():
     state.monster_visible = False
     state.monster_scream_played = False
     state.camera_z = 0.0
+    state.level_intro_timer = 0.0
+    state.transition_active = False
+    state.transition_timer = 0.0
 
 
 def kill_player(reason):
@@ -391,6 +394,7 @@ def interact():
     if near_exit():
         if state.day == 3:
             if selected_item() == "Clef":
+                state.inventory_slots[state.selected_inventory] = None
                 sounds.play_sound("door")
                 next_day()
             else:
@@ -431,7 +435,7 @@ def interact():
                         break
                 remaining = sum(1 for item in state.paintings if not item["gone"])
                 show_message(f"Tableau recupere. Porte-le au broyeur ! ({remaining} restants)", 180)
-                sounds.play_sound("interact")
+                sounds.play_sound("pickup_item")
                 return
 
     if state.day == 4:
@@ -447,6 +451,7 @@ def use_selected_item():
     if state.day == 3 and near_exit():
         if selected_item() == "Clef":
             show_message("Tu ouvres la porte avec la clef.", 180)
+            state.inventory_slots[state.selected_inventory] = None
             sounds.play_sound("door")
             next_day()
         else:
@@ -468,6 +473,7 @@ def next_day():
     state.stuck = False
     state.stuck_clicks = 0
     state.sand_damage_timer = 0.0
+    state.level_intro_timer = 0.0
 
     if state.day == 2:
         show_message("Jour 2 : les tableaux ont change de place. Jette-les avant de sortir.", 300)
@@ -492,6 +498,10 @@ def next_day():
         show_message("Jour 5 : cours jusqu'au fond du long couloir avant la fin du chrono.", 320)
     else:
         state.game_finished = True
+        return
+
+    state.transition_active = True
+    state.transition_timer = 0.0
 
 
 def check_exit():
@@ -524,6 +534,15 @@ def check_exit():
 
 
 def update_day_events(dt):
+    if state.level_intro_timer > 0:
+        state.level_intro_timer -= dt
+        if state.level_intro_timer <= 0:
+            state.level_intro_timer = 0
+        return
+
+    if state.transition_active:
+        return
+
     if not state.ending_cinematic:
         state.day_timer -= dt
     if state.day_timer <= 0 and not state.ending_cinematic and state.player_health != 999:

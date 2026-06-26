@@ -1,5 +1,6 @@
 import math
 import os
+import random
 import numpy as np
 import pygame
 import pygame.surfarray as surfarray
@@ -992,6 +993,19 @@ def draw_ui():
         pygame.draw.rect(screen, (180, 160, 110), bx, 2, border_radius=8)
         screen.blit(txt, (bx.centerx - txt.get_width() // 2, bx.centery - txt.get_height() // 2))
 
+    if state.level_intro_timer > 0:
+        intro_alpha = min(255, int(state.level_intro_timer * 100))
+        if intro_alpha > 0:
+            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, int(120 * (intro_alpha / 255))))
+            screen.blit(overlay, (0, 0))
+            title = BIG.render("LEVEL 1", True, (245, 222, 142))
+            sub = FONT.render("Find the exit", True, (200, 190, 170))
+            title.set_alpha(intro_alpha)
+            sub.set_alpha(intro_alpha)
+            screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 60))
+            screen.blit(sub, (WIDTH // 2 - sub.get_width() // 2, HEIGHT // 2))
+
     draw_inventory_bar()
 
 
@@ -1149,16 +1163,13 @@ def draw_ending():
             ("", FONT, (0, 0, 0)),
             ("", FONT, (0, 0, 0)),
             ("Avec la participation de", SMALL, (170, 170, 170)),
-            ("Mossard Studio & Play to Code Studio", FONT, (240, 240, 240)),
+            ("Mossard Studio", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
             ("Codé et Développé par", SMALL, (170, 170, 170)),
             ("Noah & Anthony", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
-            ("Son et Textures", SMALL, (170, 170, 170)),
-            ("Kerim & Mikael", FONT, (240, 240, 240)),
-            ("", FONT, (0, 0, 0)),
-            ("Accompagnement personnel et leak du code source", SMALL, (170, 170, 170)),
-            ("A un gars random dans le tram by Luai", FONT, (255, 220, 100)),
+            ("Game Design", SMALL, (170, 170, 170)),
+            ("Kerim & Mikael & Luaï", FONT, (240, 240, 240)),
         ]
         
         scroll_speed = 52.0  # pixels per second
@@ -1251,54 +1262,70 @@ def draw_loading_screen():
 def draw_intro_cinematic():
     from config import screen, BIG, FONT, SMALL
     t = state.intro_timer
-    screen.fill((178, 164, 82))
-    horizon = HEIGHT // 2 - 25
+    screen.fill((0, 0, 0))
 
-    for y in range(0, horizon):
-        ratio = y / max(1, horizon)
-        color = (155 + int(ratio * 30), 145 + int(ratio * 22), 72)
-        pygame.draw.line(screen, color, (0, y), (WIDTH, y))
+    noise = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    for _ in range(120):
+        x = random.randint(0, WIDTH - 1)
+        y = random.randint(0, HEIGHT - 1)
+        b = random.randint(0, 30)
+        noise.set_at((x, y), (b, b, b, 20))
+    screen.blit(noise, (0, 0))
 
-    pygame.draw.rect(screen, (125, 111, 55), (0, horizon, WIDTH, HEIGHT - horizon))
+    text_line = None
+    text_alpha = 0
+    use_big = False
 
-    speed = t * 80
-    for i in range(24):
-        z = ((i * 80 - speed) % 900) + 70
-        scale = 420 / z
-        y = horizon + int(scale * 180)
-        half = int(scale * 370)
-        x1 = WIDTH // 2 - half
-        x2 = WIDTH // 2 + half
-        pygame.draw.line(screen, (95, 84, 42), (x1, y), (x2, y), 2)
-        pygame.draw.line(screen, (205, 186, 90), (x1, y), (0, HEIGHT), 1)
-        pygame.draw.line(screen, (205, 186, 90), (x2, y), (WIDTH, HEIGHT), 1)
+    if t < 2.5:
+        text_line = "You don't remember how you got here..."
+        if t < 0.5:
+            text_alpha = int(t / 0.5 * 255)
+        elif t < 2.0:
+            text_alpha = 255
+        else:
+            text_alpha = int((2.5 - t) / 0.5 * 255)
+    elif t < 5.0:
+        text_line = "The only way out..."
+        if t < 3.0:
+            text_alpha = int((t - 2.5) / 0.5 * 255)
+        elif t < 4.5:
+            text_alpha = 255
+        else:
+            text_alpha = int((5.0 - t) / 0.5 * 255)
+    elif t < 7.5:
+        text_line = "...is to survive."
+        use_big = True
+        if t < 5.5:
+            text_alpha = int((t - 5.0) / 0.5 * 255)
+        elif t < 7.0:
+            text_alpha = 255
+        else:
+            text_alpha = int((7.5 - t) / 0.5 * 255)
 
-    for x in range(-120, WIDTH + 160, 120):
-        shift = int((t * 45) % 120)
-        pygame.draw.rect(screen, (145, 132, 63), (x - shift, 0, 64, horizon))
-        pygame.draw.rect(screen, (94, 86, 42), (x - shift, 0, 64, horizon), 2)
+    if text_line:
+        font = BIG if use_big else FONT
+        color = (220, 200, 170) if use_big else (200, 200, 200)
+        txt = font.render(text_line, True, color)
+        if text_alpha < 255:
+            fade_layer = pygame.Surface(txt.get_size(), pygame.SRCALPHA)
+            fade_layer.fill((255, 255, 255, text_alpha))
+            txt.blit(fade_layer, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        screen.blit(txt, (WIDTH // 2 - txt.get_width() // 2, HEIGHT // 2 - 20))
 
-    fade = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    fade.fill((0, 0, 0, 65))
-    screen.blit(fade, (0, 0))
+    if 7.5 <= t < 8.0 and random.random() < 0.35:
+        gh = random.randint(2, 16)
+        glitch = pygame.Surface((WIDTH + 20, gh))
+        glitch.fill((random.randint(200, 255), random.randint(200, 255), 200))
+        screen.blit(glitch, (random.randint(-10, 10), random.randint(0, HEIGHT - gh)))
 
-    if t < 3.2:
-        line1 = "Bienvenue dans les Backrooms."
-        line2 = ""
-    elif t < 7.4:
-        line1 = "Pour survivre, tu devras accomplir des taches sur 5 jours."
-        line2 = "Mais tu n'as que 1 minutes par jours."
-    else:
-        line1 = "Voyons si tu es digne"
-        line2 = "de t'échappé."
+    if t >= 8.0:
+        prog = min(1.0, (t - 8.0) / 1.5)
+        alpha = int(prog * 255)
+        fade = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        fade.fill((0, 0, 0, 255 - alpha))
+        screen.blit(fade, (0, 0))
 
-    text1 = BIG.render(line1, True, (255, 242, 170))
-    screen.blit(text1, (WIDTH // 2 - text1.get_width() // 2, HEIGHT // 2 - 66))
-    if line2:
-        text2 = FONT.render(line2, True, (238, 232, 205))
-        screen.blit(text2, (WIDTH // 2 - text2.get_width() // 2, HEIGHT // 2 - 10))
-
-    skip = SMALL.render("ESPACE pour passer", True, (215, 210, 185))
+    skip = SMALL.render("ESPACE pour passer", True, (80, 80, 80))
     screen.blit(skip, (WIDTH - skip.get_width() - 18, HEIGHT - 34))
 
 
@@ -1535,6 +1562,7 @@ def handle_debug_click(pos):
             state.day_timer = 60.0
             state.game_finished = False
             state.ending_cinematic = False
+            state.transition_active = False
             if d == 5:
                 state.player_x = 2.0
                 state.player_y = 1.5
@@ -1572,6 +1600,64 @@ def handle_debug_click(pos):
         else:
             state.player_health = 999
             game.show_message("Admin: ON", 120)
+
+
+LEVEL_TRANSITIONS = {
+    2: ("LEVEL 2", "Destroy the paints"),
+    3: ("LEVEL 3", "Found the key"),
+    4: ("LEVEL 4", "Restore the electricity"),
+    5: ("LEVEL 5", "RUN !"),
+}
+
+
+def draw_transition_overlay():
+    if not state.transition_active:
+        return
+    from config import screen, BIG, FONT
+    t = state.transition_timer
+    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+
+    if t < 0.5:
+        overlay.fill((0, 0, 0, 255))
+
+    elif t < 2.5:
+        overlay.fill((0, 0, 0, 255))
+        screen.blit(overlay, (0, 0))
+        overlay = None
+
+        text_t = t - 0.5
+        if text_t < 0.3:
+            text_alpha = int(text_t / 0.3 * 255)
+        elif text_t < 1.7:
+            text_alpha = 255
+        else:
+            text_alpha = int((2.0 - text_t) / 0.3 * 255)
+
+        data = LEVEL_TRANSITIONS.get(state.day)
+        if data:
+            title_txt, obj_txt = data
+        else:
+            title_txt, obj_txt = "", ""
+
+        title_surf = BIG.render(title_txt, True, (245, 222, 142))
+        obj_surf = FONT.render(obj_txt, True, (200, 190, 170))
+
+        if text_alpha < 255:
+            for surf in (title_surf, obj_surf):
+                m = pygame.Surface(surf.get_size(), pygame.SRCALPHA)
+                m.fill((255, 255, 255, text_alpha))
+                surf.blit(m, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+        screen.blit(title_surf, (WIDTH // 2 - title_surf.get_width() // 2, HEIGHT // 2 - 60))
+        screen.blit(obj_surf, (WIDTH // 2 - obj_surf.get_width() // 2, HEIGHT // 2))
+
+    else:
+        prog = min(1.0, (t - 2.5) / 0.5)
+        alpha = int((1.0 - prog) * 255)
+        overlay.fill((0, 0, 0, alpha))
+
+    if overlay is not None:
+        screen.blit(overlay, (0, 0))
 
 
 def apply_vhs_effect():
