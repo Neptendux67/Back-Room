@@ -269,7 +269,7 @@ def finish_cable_task():
     state.power_fixed = True
     state.cable_progress = 100
     close_cable_panel()
-    show_message("Les 3 cables sont relies. Le courant revient,", 4.5)
+    show_message("Les 3 câbles sont reliés. Le courant revient.", 4.5)
 
 
 def handle_cable_click(pos):
@@ -299,7 +299,7 @@ def handle_cable_click(pos):
                     finish_cable_task()
             else:
                 state.selected_cable = None
-                show_message("Mauvaise prise. Relie chaque cable a la meme couleur.", 3.0)
+                show_message("Mauvaise prise. Relie chaque câble à la même couleur.", 3.0)
                 sounds.play_sound("click")
             return
 
@@ -318,7 +318,7 @@ def selected_item():
 
 def open_safe_panel():
     if state.safe_unlocked:
-        show_message("Le coffre est deja ouvert.", 2.5)
+        show_message("Le coffre est déjà ouvert.", 2.5)
         return
 
     state.safe_panel_open = True
@@ -434,7 +434,7 @@ def get_interact_prompt():
             return "Clic droit pour utiliser la clef sur la porte"
     if state.day == 4:
         if distance(state.player_x, state.player_y, CABLE_X, CABLE_Y) < 1.6 and not state.power_fixed:
-            return "Appuie sur E pour ouvrir la boite electrique"
+            return "Appuie sur E pour ouvrir la boîte électrique"
     return None
 
 
@@ -459,7 +459,7 @@ def interact():
                 sounds.play_sound("door")
                 next_day()
             else:
-                show_message("La porte est verrouillee. Selectionne la clef et fais clic droit.", 3.5)
+                show_message("La porte est verrouillée. Sélectionne la clef et fais un clic droit.", 3.5)
         else:
             check_exit()
         return
@@ -482,9 +482,9 @@ def interact():
             if shredded_any:
                 remaining = sum(1 for p in state.paintings if not p["shredded"])
                 if remaining == 0:
-                    show_message("Tous les tableaux sont detruits. Va a la sortie !", 4.5)
+                    show_message("Tous les tableaux sont détruits. Va à la sortie !", 4.5)
                 else:
-                    show_message(f"Tableaux broyes. Il en reste {remaining} a detruire.", 3.0)
+                    show_message(f"Tableaux broyés. Il en reste {remaining} à détruire.", 3.0)
                 state.shredder_cooldown = 3.0
                 sounds.play_sound("shredder")
             else:
@@ -499,7 +499,7 @@ def interact():
                         state.inventory_slots[i] = "Tableau"
                         break
                 remaining = sum(1 for item in state.paintings if not item["gone"])
-                show_message(f"Tableau recupere. Porte-le au broyeur ! ({remaining} restants)", 3.0)
+                show_message(f"Tableau récupéré. Porte-le au broyeur ! ({remaining} restants)", 3.0)
                 sounds.play_sound("pickup_item")
                 return
 
@@ -588,13 +588,13 @@ def check_exit():
             show_message("Broye tous les tableaux avant de partir.", 3.5)
     elif state.day == 3:
         if not state.stuck:
-            show_message("Porte verrouillee. Trouve la clef, selectionne-la, puis E.", 3.5)
+            show_message("Porte verrouillée. Trouve la clef, sélectionne-la, puis E.", 3.5)
     elif state.day == 4:
         if state.power_fixed:
             sounds.play_sound("door")
             next_day()
         else:
-            show_message("Il faut reparer le courant avant de partir.", 3.5)
+            show_message("Il faut réparer le courant avant de partir.", 3.5)
     elif state.day == 5:
         pass
 
@@ -619,7 +619,7 @@ def update_day_events(dt):
     if not state.ending_cinematic:
         state.day_timer -= dt
     if state.day_timer <= 0 and not state.ending_cinematic and state.player_health < 900:
-        kill_player("Le temps est ecoule. Tu recommences depuis le debut.")
+        kill_player("Le temps est écoulé. Tu recommences depuis le début.")
         return
 
     if state.day == 1:
@@ -639,7 +639,7 @@ def update_day_events(dt):
                 state.stuck_clicks = 0
                 state.sand_damage_timer = 0.0
                 s["used"] = True
-                show_message("Le sol t'aspire, appuie sur éspace pour t'en éxtraire !", 4.0)
+                show_message("Le sol t'aspire, appuie sur Espace pour t'en extraire !", 4.0)
 
     if state.day == 3 and state.stuck:
         state.sand_damage_timer += dt
@@ -647,12 +647,12 @@ def update_day_events(dt):
             state.sand_damage_timer -= 2.0
             if state.player_health < 900:
                 state.player_health -= 1
-                show_message("Le sol t'etouffe. -1 PV", 2.5)
+                show_message("Le sol t'étouffe. -1 PV", 2.5)
                 if state.player_health <= 0:
-                    kill_player("Tu à traversé le sol.")
+                    kill_player("Tu as traversé le sol.")
                     return
             else:
-                show_message("Le sol t'etouffe. (Admin)", 2.5)
+                show_message("Le sol t'étouffe. (Admin)", 2.5)
 
     if state.day == 4 and not state.power_fixed:
         dx = state.player_x - state.monster_x
@@ -678,7 +678,7 @@ def update_day_events(dt):
         state.heartbeat = max(0, 6 - dist)
 
         if dist < 0.55 and state.player_health < 900:
-            show_message("Le monstre t'a touche. Tu te reveilles au debut du jour 4.", 4.5)
+            show_message("Le monstre t'a touché. Tu te réveilles au début du jour 4.", 4.5)
             if state.cable_panel_open:
                 close_cable_panel()
             reset_cable_task()
@@ -701,7 +701,7 @@ def update_day_events(dt):
                         sounds.play_sound("monster_scream")
                         state.monster_scream_played = True
                         sounds.start_chase_music()
-                    show_message("Il est derriere toi ! Ne t'arrete pas !", 3.0)
+                    show_message("Il est derrière toi ! Ne t'arrête pas !", 3.0)
                     state.shake = 12
             else:
                 if state.monster_visible:
@@ -714,7 +714,7 @@ def update_day_events(dt):
                             state.monster_y -= math.copysign(m_speed, dy)
                     state.heartbeat = max(0, 6 - dist)
                     if dist < 0.55 and state.player_health < 900:
-                        kill_player("Le monstre t'a rattrape. Tu recommences depuis le debut.")
+                        kill_player("Le monstre t'a rattrapé. Tu recommences depuis le début.")
     if not state.ending_cinematic and state.day != 5:
         state.stamina = max(0, min(100, state.stamina + (-30 if state.is_sprinting else 18) * dt))
         if state.stamina <= 0:

@@ -744,11 +744,11 @@ def draw_objects(depth_buffer):
                 draw_sprite(p["x"] + offset, p["y"], (180, 55, 75), 0.75, None, "painting", depth_buffer)
 
     if state.day == 3:
-        label = "coffre ouvert" if state.safe_unlocked else "coffre fort"
+        label = "coffre ouvert" if state.safe_unlocked else "coffre-fort"
         draw_sprite(SAFE_X, SAFE_Y, (80, 86, 92), 0.9, label, "safe", depth_buffer)
 
     if state.day == 4:
-        draw_sprite(CABLE_X, CABLE_Y, (230, 190, 55), 0.9, "boite electrique", "cable_box", depth_buffer)
+        draw_sprite(CABLE_X, CABLE_Y, (230, 190, 55), 0.9, "boîte électrique", "cable_box", depth_buffer)
         if not state.power_fixed:
             draw_sprite(state.monster_x, state.monster_y, (10, 10, 12), 1.35, "???", "monster", depth_buffer)
 
@@ -926,11 +926,11 @@ def draw_ui():
         left = sum(1 for p in state.paintings if not p["gone"])
         obj = "Objectif : jette les tableaux qui bougent. Restants : " + str(left)
     elif state.day == 3:
-        obj = "Objectif : code au plafond du spawn, coffre au fond, clef en main puis clic droit porte."
+        obj = "Objectif : code au plafond du spawn, coffre au fond, clef en main puis clic droit sur la porte."
     elif state.day == 4:
-        obj = "Objectif : repare les cables dans le couloir. Ne laisse pas le monstre approcher."
+        obj = "Objectif : répare les câbles dans le couloir. Ne laisse pas le monstre approcher."
     else:
-        obj = "Objectif : cours jusqu'au fond du couloir. La porte s'ouvre dans les 10 dernieres secondes !"
+        obj = "Objectif : cours jusqu'au fond du couloir. La porte s'ouvre dans les 10 dernières secondes !"
 
     objective = SMALL.render(obj, True, (220, 220, 220))
     screen.blit(objective, (30, 75))
@@ -984,8 +984,8 @@ def draw_ui():
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, int(120 * (intro_alpha / 255))))
             screen.blit(overlay, (0, 0))
-            title = BIG.render("LEVEL 1", True, (245, 222, 142))
-            sub = FONT.render("Find the exit", True, (200, 190, 170))
+            title = BIG.render("NIVEAU 1", True, (245, 222, 142))
+            sub = FONT.render("Trouve la sortie", True, (200, 190, 170))
             title.set_alpha(intro_alpha)
             sub.set_alpha(intro_alpha)
             screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 60))
@@ -1094,9 +1094,9 @@ def draw_cable_panel():
     pygame.draw.rect(screen, (190, 170, 104), panel, 4, border_radius=12)
     pygame.draw.rect(screen, (18, 18, 20), panel.inflate(-48, -120), border_radius=10)
 
-    title = FONT.render("Boite electrique - relie les 3 cables", True, (245, 233, 190))
+    title = FONT.render("Boîte électrique - relie les 3 câbles", True, (245, 233, 190))
     screen.blit(title, (panel.left + 40, panel.top + 30))
-    help_text = SMALL.render("Clique un cable a gauche, puis sa prise de meme couleur a droite. E ou X pour fermer.", True, (205, 205, 190))
+    help_text = SMALL.render("Clique un câble à gauche, puis sa prise de même couleur à droite. E ou X pour fermer.", True, (205, 205, 190))
     screen.blit(help_text, (panel.left + 40, panel.top + 80))
 
     pygame.draw.rect(screen, (75, 42, 42), close, border_radius=6)
@@ -1143,7 +1143,7 @@ def draw_cable_panel():
         pygame.draw.line(screen, (20, 20, 20), start, mouse_pos, 3)
 
     progress = sum(state.cable_connected.values())
-    status = FONT.render(str(progress) + " / 3 cables relies", True, (245, 233, 190))
+    status = FONT.render(str(progress) + " / 3 câbles reliés", True, (245, 233, 190))
     screen.blit(status, (panel.centerx - status.get_width() // 2, panel.bottom - 70))
 
 
@@ -1169,7 +1169,7 @@ def draw_safe_panel():
     code_text = BIG.render(shown, True, (120, 255, 150))
     screen.blit(code_text, (display.centerx - code_text.get_width() // 2, display.centery - code_text.get_height() // 2))
 
-    help_text = SMALL.render("Tape le code puis Entree. E ou Echap pour fermer.", True, (210, 210, 200))
+    help_text = SMALL.render("Tape le code puis Entrée. Échap ou E pour fermer.", True, (210, 210, 200))
     screen.blit(help_text, (panel.centerx - help_text.get_width() // 2, panel.top + 240))
 
     for i in range(10):
@@ -1235,13 +1235,13 @@ def draw_ending():
             ("Avec la participation de", SMALL, (170, 170, 170)),
             ("Mossard Studio", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
-            ("Game Developer", SMALL, (170, 170, 170)),
+            ("Développeur", SMALL, (170, 170, 170)),
             ("Noah & Anthony", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
-            ("Game Designer", SMALL, (170, 170, 170)),
+            ("Designer", SMALL, (170, 170, 170)),
             ("Mikael & Luaï", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
-            ("Sound Designer", SMALL, (170, 170, 170)),
+            ("Designer sonore", SMALL, (170, 170, 170)),
             ("Kerim", FONT, (240, 240, 240)),
         ]
         
@@ -1269,7 +1269,7 @@ def draw_game_over():
         return
     screen.fill((10, 10, 12))
     t1 = BIG.render("FIN", True, (255, 230, 120))
-    t2 = FONT.render("Tu as survecu aux 5 jours... ou presque.", True, (230, 230, 230))
+    t2 = FONT.render("Tu as survécu aux 5 jours... ou presque.", True, (230, 230, 230))
     t3 = SMALL.render("Appuie sur ESC pour quitter.", True, (180, 180, 180))
 
     screen.blit(t1, (WIDTH // 2 - t1.get_width() // 2, HEIGHT // 2 - 140))
@@ -1335,8 +1335,8 @@ def draw_loading_screen():
     progress = min(1.0, state.loading_timer / LOADING_DURATION)
     messages = [
         "Compilation des fichiers",
-        "Generation du terrain",
-        "Verification des anomalies",
+        "Génération du terrain",
+        "Vérification des anomalies",
         "Chargement des sons",
         "Ouverture des Backrooms",
     ]
@@ -1384,7 +1384,7 @@ def draw_intro_cinematic():
     use_big = False
 
     if t < 2.5:
-        text_line = "You don't remember how you got here..."
+        text_line = "Tu ne te souviens pas comment tu es arrivé ici..."
         if t < 0.5:
             text_alpha = int(t / 0.5 * 255)
         elif t < 2.0:
@@ -1392,7 +1392,7 @@ def draw_intro_cinematic():
         else:
             text_alpha = int((2.5 - t) / 0.5 * 255)
     elif t < 5.0:
-        text_line = "The only way out..."
+        text_line = "La seule issue..."
         if t < 3.0:
             text_alpha = int((t - 2.5) / 0.5 * 255)
         elif t < 4.5:
@@ -1400,7 +1400,7 @@ def draw_intro_cinematic():
         else:
             text_alpha = int((5.0 - t) / 0.5 * 255)
     elif t < 7.5:
-        text_line = "...is to survive."
+        text_line = "...est de survivre."
         use_big = True
         if t < 5.5:
             text_alpha = int((t - 5.0) / 0.5 * 255)
@@ -1514,7 +1514,7 @@ def _draw_title(screen, time):
 
     lines = [
         (BIG, "BACKROOM :", (220, 195, 105), 0),
-        (BIG, "One Minute to Escape", (230, 230, 220), 55),
+        (BIG, "Une Minute pour s'Échapper", (230, 230, 220), 55),
     ]
     for font, text, color, y_off in lines:
         tw, th = font.size(text)
@@ -1633,7 +1633,7 @@ def draw_menu():
     _draw_menu_button(screen, rects["options"], "Options", mouse_pos, t)
     _draw_menu_button(screen, rects["quit"], "Quitter", mouse_pos, t)
 
-    footer = SMALL.render("v1.0  |  Back-Room Studios  |  Tous droits reserves.", True, (60, 60, 65))
+    footer = SMALL.render("v1.0  |  Back-Room Studios  |  Tous droits réservés.", True, (60, 60, 65))
     screen.blit(footer, (WIDTH // 2 - footer.get_width() // 2, HEIGHT - 35))
 
 
@@ -1679,14 +1679,14 @@ def draw_options_menu():
 
     if state.mongolian_unlocked:
         track_label = opts.get("music_track", "ambient-music")
-        track_names = {"ambient-music": "Ambiance", "mongolian-secret": "Mongolian Secret"}
+        track_names = {"ambient-music": "Ambiance", "mongolian-secret": "Secret Mongol"}
         draw_button(rects["music_track"], f"Musique: {track_names.get(track_label, track_label)}", mouse_pos)
 
-    fs_text = "Plein ecran: OUI" if opts["fullscreen"] else "Plein ecran: NON"
+    fs_text = "Plein écran: OUI" if opts["fullscreen"] else "Plein écran: NON"
     draw_button(rects["fullscreen"], fs_text, mouse_pos)
 
     res = settings.RESOLUTIONS[opts["resolution_index"]]
-    draw_button(rects["resolution"], f"Resolution: {res[0]}x{res[1]}", mouse_pos)
+    draw_button(rects["resolution"], f"Résolution: {res[0]}x{res[1]}", mouse_pos)
 
     draw_button(rects["back"], "Retour", mouse_pos)
 
@@ -1780,7 +1780,7 @@ def draw_debug_menu():
     draw_button(rects["day4"], "Jour 4", mouse_pos)
     draw_button(rects["day5"], "Jour 5", mouse_pos)
     draw_button(rects["give_key"], "Donner clef", mouse_pos)
-    draw_button(rects["tp_exit"], "TP a la sortie", mouse_pos)
+    draw_button(rects["tp_exit"], "TP à la sortie", mouse_pos)
     god_text = "Admin: ON" if state.player_health >= 900 else "Admin: OFF"
     draw_button(rects["god"], god_text, mouse_pos)
     draw_button(rects["close"], "Fermer (ESC)", mouse_pos)
@@ -1822,12 +1822,12 @@ def handle_debug_click(pos):
                 state.player_a = 0.0
             state.stuck = False
             state.look_pitch = 0
-            game.show_message(f"Teleporte au jour {d}", 2.0)
+            game.show_message(f"Téléporté au jour {d}", 2.0)
             return
 
     if rects["give_key"].collidepoint(pos):
         state.inventory_slots[0] = "Clef"
-        game.show_message("Clef ajoutee a l'inventaire", 2.0)
+        game.show_message("Clef ajoutée à l'inventaire", 2.0)
         return
 
     if rects["tp_exit"].collidepoint(pos):
@@ -1836,7 +1836,7 @@ def handle_debug_click(pos):
         else:
             state.player_x = EXIT_X - 1.5
             state.player_y = EXIT_Y
-        game.show_message("TP a la sortie", 2.0)
+        game.show_message("TP à la sortie", 2.0)
         return
 
     if rects["god"].collidepoint(pos):
@@ -1849,10 +1849,10 @@ def handle_debug_click(pos):
 
 
 LEVEL_TRANSITIONS = {
-    2: ("LEVEL 2", "Destroy the paints"),
-    3: ("LEVEL 3", "Found the key"),
-    4: ("LEVEL 4", "Restore the electricity"),
-    5: ("LEVEL 5", "RUN !"),
+    2: ("NIVEAU 2", "Détruis les tableaux"),
+    3: ("NIVEAU 3", "Trouve la clef"),
+    4: ("NIVEAU 4", "Rétablis le courant"),
+    5: ("NIVEAU 5", "COURS !"),
 }
 
 

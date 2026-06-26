@@ -21,7 +21,7 @@ except pygame.error:
 
 settings.load()
 settings.apply()
-pygame.display.set_caption("Backroom : One Minute to Escape")
+pygame.display.set_caption("Backroom : Une Minute pour s'Échapper")
 try:
     icon = pygame.image.load(os.path.join("assets", "ui", "logo.png"))
     pygame.display.set_icon(icon)
