@@ -960,13 +960,6 @@ def draw_ui():
         red.fill((80, 0, 0, alpha // 3))
         screen.blit(red, (0, 0))
 
-        if game.distance(state.player_x, state.player_y, CABLE_X, CABLE_Y) < 1.6:
-            bar_w = 520
-            pygame.draw.rect(screen, (30, 30, 30), (WIDTH // 2 - bar_w // 2, HEIGHT - 220, bar_w, 30))
-            pygame.draw.rect(screen, (240, 200, 70), (WIDTH // 2 - bar_w // 2, HEIGHT - 220, int(bar_w * state.cable_progress / 100), 30))
-            t = SMALL.render("Appuie sur E pour ouvrir la boite et relier rouge, jaune et bleu", True, (255, 240, 190))
-            screen.blit(t, (WIDTH // 2 - t.get_width() // 2, HEIGHT - 260))
-
     if not state.ending_cinematic and state.day != 5:
         bar_w, bar_h = 216, 20
         sx, sy = 30, HEIGHT - 56
@@ -1288,21 +1281,84 @@ def draw_game_over():
 
 def draw_death_screen():
     from config import screen, BIG, FONT, SMALL
-    screen.fill((18, 5, 7))
-    pulse = int((math.sin(pygame.time.get_ticks() / 220) + 1) * 25)
+    screen.fill((0, 0, 0))
+
+    if PLAYER_SLUMPED_SURF:
+        z = state.game_over_zoom
+        sw = max(1, int(WIDTH * z))
+        sh = max(1, int(HEIGHT * z))
+        scaled = pygame.transform.scale(PLAYER_SLUMPED_SURF, (sw, sh))
+        bx = (WIDTH - sw) // 2
+        by = (HEIGHT - sh) // 2
+        screen.blit(scaled, (bx, by))
+
+    pulse = int((math.sin(pygame.time.get_ticks() / 300) + 1) * 25)
     overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    overlay.fill((120 + pulse, 0, 0, 55))
+    overlay.fill((80, 0, 0, 40 + pulse))
     screen.blit(overlay, (0, 0))
 
-    title = BIG.render("TU ES MORT", True, (255, 70, 70))
-    reason = FONT.render(state.death_message, True, (235, 215, 205))
-    restart = FONT.render("Appuie sur ESPACE ou clique pour recommencer au debut.", True, (255, 235, 190))
-    hp = SMALL.render("PV : 0 / 10", True, (210, 160, 150))
+    if random.random() < 0.04:
+        gy = random.randint(0, HEIGHT // 2)
+        gh = random.randint(2, 10)
+        screen.fill((180, 180, 180, 80), (0, gy, WIDTH, gh))
 
-    screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 166))
-    screen.blit(reason, (WIDTH // 2 - reason.get_width() // 2, HEIGHT // 2 - 56))
-    screen.blit(hp, (WIDTH // 2 - hp.get_width() // 2, HEIGHT // 2 + 14))
-    screen.blit(restart, (WIDTH // 2 - restart.get_width() // 2, HEIGHT // 2 + 101))
+    mouse_pos = pygame.mouse.get_pos()
+    glitch_offset = random.randint(-4, 4) if random.random() < 0.06 else 0
+
+    title = BIG.render("GAME OVER", True, (200, 40, 40))
+    title_shadow = BIG.render("GAME OVER", True, (100, 10, 10))
+    tx = WIDTH // 2 - title.get_width() // 2 + glitch_offset
+    ty = HEIGHT // 2 - 120
+    screen.blit(title_shadow, (tx + 3, ty + 3))
+    screen.blit(title, (tx, ty))
+
+    reason = FONT.render(state.death_message, True, (200, 180, 170))
+    screen.blit(reason, (WIDTH // 2 - reason.get_width() // 2, HEIGHT // 2 - 40))
+
+    btn_w, btn_h = 220, 50
+    replay_rect = pygame.Rect(WIDTH // 2 - btn_w // 2, HEIGHT // 2 + 50, btn_w, btn_h)
+    menu_rect = pygame.Rect(WIDTH // 2 - btn_w // 2, HEIGHT // 2 + 120, btn_w, btn_h)
+
+    now = pygame.time.get_ticks() / 1000
+    for rect, text in [(replay_rect, "Rejouer"), (menu_rect, "Menu principal")]:
+        hovered = rect.collidepoint(mouse_pos)
+        border_col = (220, 190, 120) if hovered else (130, 120, 80)
+        bg_col = (35, 28, 32) if hovered else (15, 12, 18)
+        hover_pulse = abs(math.sin(now * 3)) * 0.3 + 0.7 if hovered else 1.0
+        pygame.draw.rect(screen, bg_col, rect, border_radius=8)
+        pygame.draw.rect(screen, border_col, rect, 2, border_radius=8)
+        txt = FONT.render(text, True, (255, 245, 220) if hovered else (190, 180, 160))
+        txt.set_alpha(int(255 * hover_pulse))
+        screen.blit(txt, (rect.centerx - txt.get_width() // 2, rect.centery - txt.get_height() // 2))
+
+
+def draw_screamer():
+    if not state.screamer_active or not MONSTER_SITTING_SURF:
+        return
+
+    from config import screen
+    alpha = int(180 + 75 * math.sin(pygame.time.get_ticks() / 80))
+    alpha = max(30, min(255, alpha))
+
+    ox = random.randint(-20, 20)
+    oy = random.randint(-20, 20)
+    sz = random.uniform(0.7, 1.0)
+    sw = int(WIDTH * sz)
+    sh = int(HEIGHT * sz)
+    scaled = pygame.transform.scale(MONSTER_SITTING_SURF, (sw, sh))
+    scaled.set_alpha(alpha)
+
+    cx = (WIDTH - sw) // 2 + ox
+    cy = (HEIGHT - sh) // 2 + oy
+    screen.blit(scaled, (cx, cy))
+
+    if random.random() < 0.3:
+        for _ in range(3):
+            lx = random.randint(0, WIDTH)
+            lw = random.randint(1, 6)
+            lh = random.randint(1, 3)
+            screen.fill((255, 255, 255, 120), (lx, cy + random.randint(0, sh), lw, lh))
+
 
 
 def draw_loading_screen():

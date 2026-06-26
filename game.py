@@ -124,6 +124,34 @@ def lore_input():
     return False
 
 
+def update_mini_screamers(dt):
+    if state.game_state != "playing" or state.death_cinematic or state.lore_active:
+        state.screamer_active = False
+        return
+
+    if state.screamer_glitch > 0:
+        state.screamer_glitch -= dt
+
+    if state.screamer_active:
+        state.screamer_timer -= dt
+        if state.screamer_timer <= 0:
+            state.screamer_active = False
+            state.screamer_glitch = 0.15
+        return
+
+    if state.screamer_cooldown > 0:
+        state.screamer_cooldown -= dt
+        return
+
+    if random.random() < 0.0008:
+        state.screamer_active = True
+        state.screamer_timer = random.uniform(0.15, 0.4)
+        state.screamer_cooldown = random.uniform(20, 50)
+        state.screamer_glitch = 0.25
+        state.shake = 6
+        sounds.play_sound("screamer")
+
+
 def reset_cable_task():
     state.cable_progress = 0
     state.selected_cable = None
@@ -192,6 +220,10 @@ def reset_game():
     state.transition_active = False
     state.transition_timer = 0.0
     state.mongolian_unlocked = False
+    state.screamer_active = False
+    state.screamer_timer = 0.0
+    state.screamer_cooldown = random.uniform(10, 25)
+    state.screamer_glitch = 0.0
 
 
 def kill_player(reason):
@@ -205,10 +237,17 @@ def kill_player(reason):
         
     state.death_cinematic = True
     state.death_timer = 0.0
+    state.shake = 30
+    state.game_over_zoom = 0.8
     state.death_pos_x = state.player_x
     state.death_pos_y = state.player_y
     state.death_pos_a = state.player_a
-    
+
+    sounds.play_sound("monster_scream")
+    state.screamer_active = False
+    state.screamer_timer = 0.0
+    state.screamer_cooldown = 0.0
+
     if state.day == 5:
         # Place the monster right next to the player's body
         state.monster_x = state.player_x + math.cos(state.player_a + math.pi / 4.0) * 0.45

@@ -28,6 +28,7 @@ AUDIO_FILES = {
     "shredder": "broyeur.wav",
     "level1": "level1.wav",
     "tick": "tick.wav",
+    "screamer": "screamer.wav",
 }
 
 
@@ -73,6 +74,7 @@ def _fallback_sounds():
     sounds["repair"] = make_tone(720, 280, 0.35, 20)
     sounds["door"] = make_tone(180, 350, 0.4, 25)
     sounds["tick"] = make_tone(880, 30, 0.12)
+    sounds["screamer"] = make_tone(160, 500, 0.5, 120)
 
 
 def load_sounds():

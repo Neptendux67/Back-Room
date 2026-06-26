@@ -261,11 +261,19 @@ while running:
 
         elif state.game_state == "dead":
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                running = False
+                sounds.stop_all_sounds()
+                enter_menu()
             if event.type == pygame.KEYDOWN and event.key in (pygame.K_SPACE, pygame.K_RETURN):
                 start_game()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                start_game()
+                btn_w, btn_h = 220, 50
+                replay_rect = pygame.Rect(config.WIDTH // 2 - btn_w // 2, config.HEIGHT // 2 + 50, btn_w, btn_h)
+                menu_rect = pygame.Rect(config.WIDTH // 2 - btn_w // 2, config.HEIGHT // 2 + 120, btn_w, btn_h)
+                if replay_rect.collidepoint(event.pos):
+                    start_game()
+                elif menu_rect.collidepoint(event.pos):
+                    sounds.stop_all_sounds()
+                    enter_menu()
 
         elif state.game_state == "playing":
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -360,6 +368,7 @@ while running:
         continue
 
     if state.game_state == "dead":
+        state.game_over_zoom = min(1.35, state.game_over_zoom + dt * 0.2)
         render.draw_death_screen()
         pygame.display.flip()
         continue
@@ -397,7 +406,7 @@ while running:
 
     if state.death_cinematic:
         state.death_timer += dt
-        if state.death_timer >= 1.5:
+        if state.death_timer >= 0.8 and not state.game_finished:
             state.death_cinematic = False
             state.game_state = "dead"
             pygame.mouse.set_visible(True)
@@ -405,12 +414,15 @@ while running:
     else:
         game.update_day_events(dt)
 
+    game.update_mini_screamers(dt)
+
     if state.transition_active:
         state.transition_timer += dt
         if state.transition_timer >= 3.0:
             state.transition_active = False
 
     if state.game_state == "dead":
+        state.game_over_zoom = min(1.35, state.game_over_zoom + dt * 0.2)
         render.draw_death_screen()
         pygame.display.flip()
         continue
@@ -421,36 +433,59 @@ while running:
         sounds.update_footsteps(False)
         render.draw_game_over()
     else:
-        if state.death_cinematic:
-            alpha = min(255, int(state.death_timer * 170))
-            config.screen.fill((0, 0, 0))
-            vignette = pygame.Surface((config.WIDTH, config.HEIGHT), pygame.SRCALPHA)
-            vignette.fill((80, 0, 0, alpha))
-            config.screen.blit(vignette, (0, 0))
-        else:
-            render.draw_floor_ceiling()
-            depth_buffer = render.cast_rays()
-            render.draw_objects(depth_buffer)
+        render.draw_floor_ceiling()
+        depth_buffer = render.cast_rays()
+        render.draw_objects(depth_buffer)
+        if not state.death_cinematic:
             render.draw_player_body(moving_now)
             render.draw_ceiling_code_hint()
             render.draw_crosshair()
 
-            if state.shake > 0:
-                state.shake -= 1
-                offset_x = random.randint(-state.shake, state.shake)
-                offset_y = random.randint(-state.shake, state.shake)
-                if not hasattr(config, '_shake_buf'):
-                    config._shake_buf = pygame.Surface((config.WIDTH, config.HEIGHT))
-                config._shake_buf.blit(config.screen, (0, 0))
-                config.screen.fill((0, 0, 0))
-                config.screen.blit(config._shake_buf, (offset_x, offset_y))
+        if state.shake > 0:
+            state.shake -= 1
+            offset_x = random.randint(-state.shake, state.shake)
+            offset_y = random.randint(-state.shake, state.shake)
+            if not hasattr(config, '_shake_buf'):
+                config._shake_buf = pygame.Surface((config.WIDTH, config.HEIGHT))
+            config._shake_buf.blit(config.screen, (0, 0))
+            config.screen.fill((0, 0, 0))
+            config.screen.blit(config._shake_buf, (offset_x, offset_y))
 
+        if state.death_cinematic:
+            pitch_target = -config.PITCH_LIMIT
+            state.look_pitch += (pitch_target - state.look_pitch) * dt * 12
+            t = min(1.0, state.death_timer / 0.8)
+            alpha = min(255, int(t * 220))
+            vignette = pygame.Surface((config.WIDTH, config.HEIGHT), pygame.SRCALPHA)
+            vignette.fill((80, 0, 0, alpha))
+            config.screen.blit(vignette, (0, 0))
+            if t > 0.2 and random.random() < 0.6:
+                for _ in range(8):
+                    bx = random.randint(0, config.WIDTH)
+                    by = random.randint(0, config.HEIGHT // 2)
+                    br = random.randint(3, 16)
+                    pygame.draw.circle(vignette, (60, 0, 0, random.randint(60, 180)), (bx, by), br)
+            config.screen.blit(vignette, (0, 0))
+
+        if not state.death_cinematic:
             render.draw_ui()
             render.draw_lore_message()
-            if state.cable_panel_open:
-                render.draw_cable_panel()
-            if state.safe_panel_open:
-                render.draw_safe_panel()
+        if state.cable_panel_open:
+            render.draw_cable_panel()
+        if state.safe_panel_open:
+            render.draw_safe_panel()
+
+    if state.screamer_active:
+        render.draw_screamer()
+
+    if state.screamer_glitch > 0:
+        glitch = pygame.Surface((config.WIDTH, config.HEIGHT), pygame.SRCALPHA)
+        for _ in range(5):
+            gx = random.randint(0, config.WIDTH)
+            gw = random.randint(10, 80)
+            gh = random.randint(1, 4)
+            glitch.fill((255, 255, 255, random.randint(60, 150)), (gx, random.randint(0, config.HEIGHT), gw, gh))
+        config.screen.blit(glitch, (0, 0))
 
     if state.debug_menu_open:
         render.draw_debug_menu()
