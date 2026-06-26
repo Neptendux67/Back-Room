@@ -158,7 +158,8 @@ def reset_game():
     state.stuck = False
     state.stuck_clicks = 0
     state.sand_damage_timer = 0.0
-    state.player_health = MAX_HEALTH
+    if state.player_health < 900:
+        state.player_health = MAX_HEALTH
     state.inventory_slots[:] = [None, None, None, None]
     state.selected_inventory = 0
     state.safe_panel_open = False

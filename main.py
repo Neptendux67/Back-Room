@@ -196,19 +196,27 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        if not state.debug_menu_open and state.game_state == "playing" and event.type == pygame.KEYDOWN:
+        if not state.debug_menu_open and state.game_state in ("playing", "paused") and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_BACKSPACE:
                 state.debug_input = state.debug_input[:-1]
             elif event.unicode:
-                state.debug_input += event.unicode
-                if "admin" in state.debug_input:
+                state.debug_input = (state.debug_input + event.unicode)[-20:]
+                if "admin" in state.debug_input.lower():
                     state.debug_input = ""
                     state.debug_menu_open = True
                     pygame.mouse.set_visible(True)
                     pygame.event.set_grab(False)
-                if "mongolian" in state.debug_input:
+                elif "mongolian" in state.debug_input.lower():
                     state.debug_input = ""
                     state.mongolian_unlocked = True
+                elif "god" in state.debug_input.lower():
+                    state.debug_input = ""
+                    if state.player_health >= 900:
+                        state.player_health = 10
+                        game.show_message("Admin: OFF", 2.0)
+                    else:
+                        state.player_health = 999
+                        game.show_message("Admin: ON", 2.0)
 
         if state.debug_menu_open:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
