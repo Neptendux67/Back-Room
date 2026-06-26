@@ -442,6 +442,9 @@ while running:
     if state.debug_menu_open:
         render.draw_debug_menu()
 
+    if state.game_state == "playing" or state.game_state == "dead":
+        render.apply_vhs_effect()
+
     pygame.display.flip()
 
 sounds.stop_menu_music()

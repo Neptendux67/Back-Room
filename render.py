@@ -28,6 +28,7 @@ _MENU_LOGO = None
 _MENU_VIGNETTE = None
 _FPS_TICKS = 0
 _FPS_COUNT = 0
+_VHS_SCANLINES = None
 _FPS_DISPLAY = 0
 
 
@@ -1571,3 +1572,26 @@ def handle_debug_click(pos):
         else:
             state.player_health = 999
             game.show_message("Admin: ON", 120)
+
+
+def apply_vhs_effect():
+    global _VHS_SCANLINES
+    from config import screen
+    t = pygame.time.get_ticks() / 1000
+
+    if _VHS_SCANLINES is None:
+        _VHS_SCANLINES = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        for y in range(0, HEIGHT, 3):
+            _VHS_SCANLINES.fill((0, 0, 0, 28), (0, y, WIDTH, 1))
+
+    screen.blit(_VHS_SCANLINES, (0, 0))
+
+    if int(t * 30) & 1:
+        try:
+            arr = surfarray.pixels3d(screen)
+            red = arr[:, :, 0].copy()
+            arr[2:, :, 0] = red[:-2, :]
+            blue = arr[:, :, 2].copy()
+            arr[:-2, :, 2] = blue[2:, :]
+        except Exception:
+            pass
