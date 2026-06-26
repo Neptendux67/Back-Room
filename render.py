@@ -945,13 +945,7 @@ def draw_ui():
     fps_txt = SMALL.render(f"FPS: {_FPS_DISPLAY}", True, (120, 200, 120))
     screen.blit(fps_txt, (WIDTH - fps_txt.get_width() - 30, 31))
 
-    if state.message_timer > 0:
-        box = pygame.Rect(30, HEIGHT - 240, WIDTH - 60, 90)
-        pygame.draw.rect(screen, (0, 0, 0), box)
-        pygame.draw.rect(screen, (180, 160, 110), box, 3)
-        txt = FONT.render(state.message, True, (255, 245, 210))
-        screen.blit(txt, (box.x + 24, box.y + 22))
-        state.message_timer -= 1
+    # ----- New lore message disabled here (drawn separately after objects) -----
 
     if state.stuck:
         txt = BIG.render("TU T'ENFONCES ! APPUIE SUR ESPACE", True, (255, 80, 80))
@@ -1007,6 +1001,91 @@ def draw_ui():
             screen.blit(sub, (WIDTH // 2 - sub.get_width() // 2, HEIGHT // 2))
 
     draw_inventory_bar()
+
+
+def draw_lore_message():
+    if not state.lore_active:
+        return
+
+    from config import screen, FONT, SMALL
+
+    box_w = int(WIDTH * 0.72)
+    box_h = 140
+    box_x = (WIDTH - box_w) // 2
+    target_y = HEIGHT - box_h - 55
+
+    # --- animation ---
+    if state.lore_state == "entering":
+        t = min(1.0, state.lore_timer / 0.35)
+        t = 1.0 - (1.0 - t) ** 3
+        offset = (1.0 - t) * (box_h + 65)
+        alpha = int(t * 215)
+    elif state.lore_state == "exiting":
+        t = min(1.0, state.lore_timer / 0.35)
+        offset = t * (box_h + 65)
+        alpha = int((1.0 - t) * 215)
+    else:
+        offset = 0
+        alpha = 215
+
+    box_y = target_y + offset
+
+    # --- darken background behind the box ---
+    dark = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    dark.fill((0, 0, 0, 80))
+    screen.blit(dark, (0, 0))
+
+    # --- shadow ---
+    shadow = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+    shadow.fill((0, 0, 0, 0))
+    pygame.draw.rect(shadow, (0, 0, 0, 60), (4, 4, box_w, box_h), border_radius=14)
+    screen.blit(shadow, (box_x, box_y))
+
+    # --- panel background ---
+    bg = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+    bg.fill((0, 0, 0, 0))
+    pygame.draw.rect(bg, (10, 10, 15, alpha), (0, 0, box_w, box_h), border_radius=14)
+    screen.blit(bg, (box_x, box_y))
+
+    # --- border ---
+    border = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+    border.fill((0, 0, 0, 0))
+    pygame.draw.rect(border, (130, 120, 80, alpha), (0, 0, box_w, box_h), 2, border_radius=14)
+    screen.blit(border, (box_x, box_y))
+
+    # --- typewriter text with word wrap ---
+    margin = 24
+    text_max_w = box_w - margin * 2
+    visible = state.lore_text[:state.lore_char_index]
+
+    words = visible.split(" ")
+    lines = []
+    cur = ""
+    for w in words:
+        test = cur + (" " if cur else "") + w
+        if FONT.size(test)[0] <= text_max_w:
+            cur = test
+        else:
+            if cur:
+                lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
+
+    y = box_y + margin
+    line_h = FONT.size("Tg")[1] + 6
+    for line in lines:
+        rendered = FONT.render(line, True, (235, 230, 215))
+        screen.blit(rendered, (box_x + margin, y))
+        y += line_h
+
+    # --- "[E] Continuer" pulse ---
+    if state.lore_state == "waiting":
+        pulse = 0.5 + 0.5 * math.sin(state.lore_timer * 3.5)
+        cont_alpha = int(100 + 155 * pulse)
+        cont = SMALL.render("[E] Continuer", True, (200, 185, 140))
+        cont.set_alpha(cont_alpha)
+        screen.blit(cont, (box_x + box_w - cont.get_width() - margin, box_y + box_h - margin - cont.get_height()))
 
 
 def draw_cable_panel():
@@ -1580,12 +1659,12 @@ def handle_debug_click(pos):
                 state.player_a = 0.0
             state.stuck = False
             state.look_pitch = 0
-            game.show_message(f"Teleporte au jour {d}", 120)
+            game.show_message(f"Teleporte au jour {d}", 2.0)
             return
 
     if rects["give_key"].collidepoint(pos):
         state.inventory_slots[0] = "Clef"
-        game.show_message("Clef ajoutee a l'inventaire", 120)
+        game.show_message("Clef ajoutee a l'inventaire", 2.0)
         return
 
     if rects["tp_exit"].collidepoint(pos):
@@ -1594,16 +1673,16 @@ def handle_debug_click(pos):
         else:
             state.player_x = EXIT_X - 1.5
             state.player_y = EXIT_Y
-        game.show_message("TP a la sortie", 120)
+        game.show_message("TP a la sortie", 2.0)
         return
 
     if rects["god"].collidepoint(pos):
         if state.player_health == 999:
             state.player_health = 100
-            game.show_message("Admin: OFF", 120)
+            game.show_message("Admin: OFF", 2.0)
         else:
             state.player_health = 999
-            game.show_message("Admin: ON", 120)
+            game.show_message("Admin: ON", 2.0)
 
 
 LEVEL_TRANSITIONS = {

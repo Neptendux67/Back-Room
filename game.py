@@ -67,9 +67,61 @@ def try_move(dx, dy):
             state.player_y = ny
 
 
-def show_message(text, time=230):
-    state.message = text
-    state.message_timer = time
+def show_message(text, duration=4.0):
+    state.lore_active = True
+    state.lore_text = text
+    state.lore_char_index = 0
+    state.lore_timer = 0.0
+    state.lore_state = "entering"
+    state.lore_hold_time = duration
+
+
+def update_lore(dt):
+    if not state.lore_active:
+        return
+    state.lore_timer += dt
+
+    if state.lore_state == "entering":
+        if state.lore_timer >= 0.35:
+            state.lore_state = "typing"
+            state.lore_timer = 0.0
+            state.lore_char_index = 0
+
+    elif state.lore_state == "typing":
+        CHARS_PER_SEC = 45
+        prev = state.lore_char_index
+        state.lore_char_index = min(len(state.lore_text), int(state.lore_timer * CHARS_PER_SEC))
+        if state.lore_char_index > prev:
+            sounds.play_sound("tick")
+        if state.lore_char_index >= len(state.lore_text):
+            state.lore_state = "waiting"
+            state.lore_timer = 0.0
+
+    elif state.lore_state == "waiting":
+        if state.lore_timer >= state.lore_hold_time:
+            state.lore_state = "exiting"
+            state.lore_timer = 0.0
+
+    elif state.lore_state == "exiting":
+        if state.lore_timer >= 0.35:
+            state.lore_active = False
+
+
+def lore_input():
+    if not state.lore_active:
+        return False
+    if state.lore_state == "typing":
+        state.lore_char_index = len(state.lore_text)
+        state.lore_state = "waiting"
+        state.lore_timer = 0.0
+        sounds.play_sound("click")
+        return True
+    elif state.lore_state == "waiting":
+        state.lore_state = "exiting"
+        state.lore_timer = 0.0
+        sounds.play_sound("click")
+        return True
+    return False
 
 
 def reset_cable_task():
@@ -87,8 +139,11 @@ def reset_game():
 
     state.day = 1
     state.day_timer = DAY_LIMIT
-    state.message = "Jour 1 : explore l'appartement. Un bruit arrive bientot..."
-    state.message_timer = 260
+    state.lore_active = False
+    state.lore_text = ""
+    state.lore_char_index = 0
+    state.lore_timer = 0.0
+    state.lore_state = ""
     state.shake = 0
     state.j1_event_done = False
     state.j1_timer = 4.0
@@ -210,7 +265,7 @@ def finish_cable_task():
     state.power_fixed = True
     state.cable_progress = 100
     close_cable_panel()
-    show_message("Les 3 cables sont relies. Le courant revient,", 280)
+    show_message("Les 3 cables sont relies. Le courant revient,", 4.5)
 
 
 def handle_cable_click(pos):
@@ -240,7 +295,7 @@ def handle_cable_click(pos):
                     finish_cable_task()
             else:
                 state.selected_cable = None
-                show_message("Mauvaise prise. Relie chaque cable a la meme couleur.", 180)
+                show_message("Mauvaise prise. Relie chaque cable a la meme couleur.", 3.0)
                 sounds.play_sound("click")
             return
 
@@ -259,7 +314,7 @@ def selected_item():
 
 def open_safe_panel():
     if state.safe_unlocked:
-        show_message("Le coffre est deja ouvert.", 160)
+        show_message("Le coffre est deja ouvert.", 2.5)
         return
 
     state.safe_panel_open = True
@@ -284,10 +339,10 @@ def unlock_safe():
     state.safe_input = ""
     close_safe_panel()
     if add_item_to_inventory("Clef"):
-        show_message("Le coffre s'ouvre. Tu prends une clef.", 260)
+        show_message("Le coffre s'ouvre. Tu prends une clef.", 4.0)
         sounds.play_sound("clef")
     else:
-        show_message("Inventaire plein. La clef reste dans le coffre.", 260)
+        show_message("Inventaire plein. La clef reste dans le coffre.", 4.0)
         state.safe_unlocked = False
 
 
@@ -318,7 +373,7 @@ def handle_safe_click(pos):
                         unlock_safe()
                     else:
                         state.safe_input = ""
-                        show_message("Code faux.", 150)
+                        show_message("Code faux.", 2.5)
                         sounds.play_sound("bang")
             return
 
@@ -338,7 +393,7 @@ def handle_safe_key(event):
             unlock_safe()
         else:
             state.safe_input = ""
-            show_message("Code faux.", 150)
+            show_message("Code faux.", 2.5)
             sounds.play_sound("bang")
         return
 
@@ -356,7 +411,7 @@ def handle_safe_key(event):
                 unlock_safe()
             else:
                 state.safe_input = ""
-                show_message("Code faux.", 150)
+                show_message("Code faux.", 2.5)
 
 
 def get_interact_prompt():
@@ -400,7 +455,7 @@ def interact():
                 sounds.play_sound("door")
                 next_day()
             else:
-                show_message("La porte est verrouillee. Selectionne la clef et fais clic droit.", 220)
+                show_message("La porte est verrouillee. Selectionne la clef et fais clic droit.", 3.5)
         else:
             check_exit()
         return
@@ -409,7 +464,7 @@ def interact():
         shredder_dist = distance(state.player_x, state.player_y, SHREDDER_X, SHREDDER_Y)
         if shredder_dist < 1.2:
             if state.shredder_cooldown > 0:
-                show_message("Le broyeur est en cours d'utilisation...", 60)
+                show_message("Le broyeur est en cours d'utilisation...", 1.5)
                 return
             shredded_any = False
             for i in range(len(state.inventory_slots)):
@@ -423,13 +478,13 @@ def interact():
             if shredded_any:
                 remaining = sum(1 for p in state.paintings if not p["shredded"])
                 if remaining == 0:
-                    show_message("Tous les tableaux sont detruits. Va a la sortie !", 300)
+                    show_message("Tous les tableaux sont detruits. Va a la sortie !", 4.5)
                 else:
-                    show_message(f"Tableaux broyes. Il en reste {remaining} a detruire.", 180)
+                    show_message(f"Tableaux broyes. Il en reste {remaining} a detruire.", 3.0)
                 state.shredder_cooldown = 3.0
                 sounds.play_sound("shredder")
             else:
-                show_message("Tu n'as pas de tableau a broyer.", 120)
+                show_message("Tu n'as pas de tableau a broyer.", 2.0)
             return
 
         for p in state.paintings:
@@ -440,7 +495,7 @@ def interact():
                         state.inventory_slots[i] = "Tableau"
                         break
                 remaining = sum(1 for item in state.paintings if not item["gone"])
-                show_message(f"Tableau recupere. Porte-le au broyeur ! ({remaining} restants)", 180)
+                show_message(f"Tableau recupere. Porte-le au broyeur ! ({remaining} restants)", 3.0)
                 sounds.play_sound("pickup_item")
                 return
 
@@ -456,12 +511,12 @@ def interact():
 def use_selected_item():
     if state.day == 3 and near_exit():
         if selected_item() == "Clef":
-            show_message("Tu ouvres la porte avec la clef.", 180)
+            show_message("Tu ouvres la porte avec la clef.", 3.0)
             state.inventory_slots[state.selected_inventory] = None
             sounds.play_sound("door")
             next_day()
         else:
-            show_message("La porte est verrouillée. Essaye de la déverrouiller avec une clef.", 220)
+            show_message("La porte est verrouillée. Essaye de la déverrouiller avec une clef.", 3.5)
 
 
 def next_day():
@@ -482,15 +537,15 @@ def next_day():
     state.level_intro_timer = 0.0
 
     if state.day == 2:
-        show_message("Jour 2 : Les tableaux sont corrompus. Jette-les avant de sortir.", 300)
+        show_message("Jour 2 : Les tableaux sont corrompus. Jette-les avant de sortir.", 4.5)
     elif state.day == 3:
-        show_message("Jour 3 : Trouve le code pour ouvrir le coffre. Indice : Lève la tête.", 320)
+        show_message("Jour 3 : Trouve le code pour ouvrir le coffre. Indice : Lève la tête.", 5.0)
     elif state.day == 4:
         reset_cable_task()
         state.power_fixed = False
         state.monster_x = 12.5
         state.monster_y = 1.5
-        show_message("Jour 4 : Le monstre a coupé le courant. Trouve le disjoncteur pour remettre le courant.", 300)
+        show_message("Jour 4 : Le monstre a coupé le courant. Trouve le disjoncteur pour remettre le courant.", 4.5)
     elif state.day == 5:
         state.ending_timer = 0
         state.monster_x = 2.0
@@ -501,7 +556,7 @@ def next_day():
         state.monster_visible = False
         state.monster_scream_played = False
         state.player_has_moved = False
-        show_message("Jour 5 : cours jusqu'au fond du long couloir avant la fin du chrono.", 320)
+        show_message("Jour 5 : cours jusqu'au fond du long couloir avant la fin du chrono.", 5.0)
     else:
         state.game_finished = True
         return
@@ -520,22 +575,22 @@ def check_exit():
             sounds.play_sound("door")
             next_day()
         else:
-            show_message("Quelque chose te retient. Attends...")
+            show_message("Quelque chose te retient. Attends...", 3.5)
     elif state.day == 2:
         if all(p["shredded"] for p in state.paintings):
             sounds.play_sound("door")
             next_day()
         else:
-            show_message("Broye tous les tableaux avant de partir.", 220)
+            show_message("Broye tous les tableaux avant de partir.", 3.5)
     elif state.day == 3:
         if not state.stuck:
-            show_message("Porte verrouillee. Trouve la clef, selectionne-la, puis E.", 220)
+            show_message("Porte verrouillee. Trouve la clef, selectionne-la, puis E.", 3.5)
     elif state.day == 4:
         if state.power_fixed:
             sounds.play_sound("door")
             next_day()
         else:
-            show_message("Il faut reparer le courant avant de partir.")
+            show_message("Il faut reparer le courant avant de partir.", 3.5)
     elif state.day == 5:
         pass
 
@@ -548,6 +603,10 @@ def update_day_events(dt):
         return
 
     if state.transition_active:
+        return
+
+    update_lore(dt)
+    if state.lore_active:
         return
 
     if state.shredder_cooldown > 0:
@@ -565,7 +624,7 @@ def update_day_events(dt):
             if state.j1_timer <= 0:
                 state.j1_event_done = True
                 state.shake = 22
-                show_message("BANG ! Un bruit soudain et impossible vient du plafond. Sors vite !", 320)
+                show_message("BANG ! Un bruit soudain et impossible vient du plafond. Sors vite !", 5.0)
                 sounds.play_sound("bang")
                 sounds.play_sound("level1")
 
@@ -576,14 +635,14 @@ def update_day_events(dt):
                 state.stuck_clicks = 0
                 state.sand_damage_timer = 0.0
                 s["used"] = True
-                show_message("Le sol t'aspire, appuie sur éspace pour t'en éxtraire !", 260)
+                show_message("Le sol t'aspire, appuie sur éspace pour t'en éxtraire !", 4.0)
 
     if state.day == 3 and state.stuck:
         state.sand_damage_timer += dt
         if state.sand_damage_timer >= 2.0:
             state.sand_damage_timer -= 2.0
             state.player_health -= 1
-            show_message("Le sol t'etouffe. -1 PV", 150)
+            show_message("Le sol t'etouffe. -1 PV", 2.5)
             if state.player_health <= 0:
                 kill_player("Tu à traversé le sol.")
                 return
@@ -612,7 +671,7 @@ def update_day_events(dt):
         state.heartbeat = max(0, 6 - dist)
 
         if dist < 0.55 and state.player_health != 999:
-            show_message("Le monstre t'a touche. Tu te reveilles au debut du jour 4.", 300)
+            show_message("Le monstre t'a touche. Tu te reveilles au debut du jour 4.", 4.5)
             if state.cable_panel_open:
                 close_cable_panel()
             reset_cable_task()
@@ -634,7 +693,8 @@ def update_day_events(dt):
                     if not state.monster_scream_played:
                         sounds.play_sound("monster_scream")
                         state.monster_scream_played = True
-                    show_message("Il est derriere toi ! Ne t'arrete pas !", 180)
+                        sounds.start_chase_music()
+                    show_message("Il est derriere toi ! Ne t'arrete pas !", 3.0)
                     state.shake = 12
             else:
                 if state.monster_visible:

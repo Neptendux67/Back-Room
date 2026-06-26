@@ -27,6 +27,7 @@ AUDIO_FILES = {
     "pickup_item": "pickup-item.wav",
     "shredder": "broyeur.wav",
     "level1": "level1.wav",
+    "tick": "tick.wav",
 }
 
 
@@ -71,6 +72,7 @@ def _fallback_sounds():
     sounds["interact"] = make_tone(360, 120, 0.25)
     sounds["repair"] = make_tone(720, 280, 0.35, 20)
     sounds["door"] = make_tone(180, 350, 0.4, 25)
+    sounds["tick"] = make_tone(880, 30, 0.12)
 
 
 def load_sounds():
@@ -199,6 +201,19 @@ def start_level_music(day):
     if day == 1 or day == 5:
         return
     path = os.path.join(_audio_dir(), f"level{day}.wav")
+    if not os.path.isfile(path):
+        return
+    pygame.mixer.music.stop()
+    pygame.mixer.music.unload()
+    pygame.mixer.music.load(path)
+    pygame.mixer.music.set_volume(music_volume * 0.50)
+    pygame.mixer.music.play(loops=-1)
+
+
+def start_chase_music():
+    if not sound_available or not sound_enabled:
+        return
+    path = os.path.join(_audio_dir(), "level5.wav")
     if not os.path.isfile(path):
         return
     pygame.mixer.music.stop()

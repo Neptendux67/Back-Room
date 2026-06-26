@@ -7,9 +7,16 @@ look_pitch = 0
 
 day = 1
 day_timer = DAY_LIMIT
-message = "Jour 1 : explore l'appartement. Un bruit arrive bientot..."
-message_timer = 260
 shake = 0
+
+# Lore / dialogue system
+lore_active = False
+lore_text = ""
+lore_char_index = 0
+lore_timer = 0.0
+lore_state = ""  # "entering", "typing", "waiting", "exiting"
+lore_hold_time = 4.0
+
 j1_event_done = False
 j1_timer = 4.0
 

@@ -313,10 +313,16 @@ while running:
                         state.stuck = False
                         state.stuck_clicks = 0
                         state.sand_damage_timer = 0.0
-                        game.show_message("Tu t'arraches du sol. Ne reste pas ici.", 240)
+                        game.show_message("Tu t'arraches du sol. Ne reste pas ici.", 4.0)
 
                 if event.key == pygame.K_e and not state.cable_panel_open and not state.safe_panel_open:
-                    game.interact()
+                    if state.lore_active:
+                        game.lore_input()
+                    else:
+                        game.interact()
+
+                if event.key == pygame.K_SPACE and not state.stuck and state.lore_active:
+                    game.lore_input()
 
         if state.game_finished and event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             sounds.stop_all_sounds()
@@ -370,7 +376,7 @@ while running:
         state.is_sprinting = (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) and can_sprint
         speed = config.SPRINT_SPEED if state.is_sprinting else config.WALK_SPEED
 
-        if not state.stuck and not state.cable_panel_open and not state.safe_panel_open and not state.death_cinematic:
+        if not state.stuck and not state.cable_panel_open and not state.safe_panel_open and not state.death_cinematic and not state.lore_active:
             forward = keys[pygame.K_w] or keys[pygame.K_z]
             backward = keys[pygame.K_s]
             left = keys[pygame.K_a] or keys[pygame.K_q]
@@ -440,6 +446,7 @@ while running:
                 config.screen.blit(config._shake_buf, (offset_x, offset_y))
 
             render.draw_ui()
+            render.draw_lore_message()
             if state.cable_panel_open:
                 render.draw_cable_panel()
             if state.safe_panel_open:
