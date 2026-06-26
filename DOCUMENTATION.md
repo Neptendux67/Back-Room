@@ -597,4 +597,4 @@ python3 main.py
 
 ---
 
-*Documentation générée le 26 juin 2026 — Version 1.0*
+*Documentation faites par ODG848 le 26 juin 2026*
