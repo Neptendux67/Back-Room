@@ -874,10 +874,18 @@ def draw_health_bar():
     x, y = 240, 24
     bar_w, bar_h = 216, 28
     pygame.draw.rect(screen, (35, 12, 12), (x, y, bar_w, bar_h), border_radius=6)
-    fill_w = int(bar_w * max(0, state.player_health) / 10)
+    
+    health_val = state.player_health
+    if health_val >= 900:
+        fill_w = bar_w
+        hp_text = "PV INF/10"
+    else:
+        fill_w = int(bar_w * max(0, health_val) / 10)
+        hp_text = f"PV {health_val}/10"
+        
     pygame.draw.rect(screen, (190, 35, 35), (x, y, fill_w, bar_h), border_radius=6)
     pygame.draw.rect(screen, (235, 210, 185), (x, y, bar_w, bar_h), 3, border_radius=6)
-    hp = SMALL.render("PV " + str(state.player_health) + "/10", True, (255, 235, 220))
+    hp = SMALL.render(hp_text, True, (255, 235, 220))
     screen.blit(hp, (x + bar_w + 14, y - 1))
 
 
@@ -1702,7 +1710,7 @@ def draw_debug_menu():
     draw_button(rects["day5"], "Jour 5", mouse_pos)
     draw_button(rects["give_key"], "Donner clef", mouse_pos)
     draw_button(rects["tp_exit"], "TP a la sortie", mouse_pos)
-    god_text = "Admin: ON" if state.player_health == 999 else "Admin: OFF"
+    god_text = "Admin: ON" if state.player_health >= 900 else "Admin: OFF"
     draw_button(rects["god"], god_text, mouse_pos)
     draw_button(rects["close"], "Fermer (ESC)", mouse_pos)
 
@@ -1761,8 +1769,8 @@ def handle_debug_click(pos):
         return
 
     if rects["god"].collidepoint(pos):
-        if state.player_health == 999:
-            state.player_health = 100
+        if state.player_health >= 900:
+            state.player_health = 10
             game.show_message("Admin: OFF", 2.0)
         else:
             state.player_health = 999
