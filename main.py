@@ -423,8 +423,6 @@ while running:
     else:
         game.update_day_events(dt)
 
-    game.update_jumpscares(dt)
-
     if state.transition_active:
         state.transition_timer += dt
         if state.transition_timer >= 3.0:
@@ -515,9 +513,6 @@ while running:
             render.draw_cable_panel()
         if state.safe_panel_open:
             render.draw_safe_panel()
-
-    if state.jumpscare_active:
-        render.draw_jumpscare()
 
     if state.debug_menu_open:
         render.draw_debug_menu()
