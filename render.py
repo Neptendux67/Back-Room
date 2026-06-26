@@ -1533,17 +1533,9 @@ def _draw_dust(screen, dt):
         screen.set_at((int(p["x"]), int(p["y"])), (p["b"], p["b"], p["b"], min(255, p["b"])))
 
 
-_VIGNETTE_SURF = None
+
 
 def _draw_atmosphere(screen, time):
-    global _VIGNETTE_SURF
-    if _VIGNETTE_SURF is None or _VIGNETTE_SURF.get_size() != (WIDTH, HEIGHT):
-        _VIGNETTE_SURF = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        for r in range(900, 0, -2):
-            a = max(0, 220 - (900 - r) * 2)
-            pygame.draw.circle(_VIGNETTE_SURF, (0, 0, 0, a), (WIDTH // 2, HEIGHT // 2), r)
-    screen.blit(_VIGNETTE_SURF, (0, 0))
-
     flicker = random.random() < 0.04
     if flicker:
         f = random.uniform(0.6, 0.95)

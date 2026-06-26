@@ -47,7 +47,6 @@ def apply():
     render._MENU_VIGNETTE = None
     render._MENU_BG = None
     render._DUST = None
-    render._VIGNETTE_SURF = None
 
     logo_path = os.path.join(os.path.dirname(__file__), "assets", "ui", "logo.png")
     if os.path.isfile(logo_path):
