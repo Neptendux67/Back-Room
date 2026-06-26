@@ -92,6 +92,7 @@ def reset_game():
     state.shake = 0
     state.j1_event_done = False
     state.j1_timer = 4.0
+    state.shredder_cooldown = 0.0
 
     for painting in state.paintings:
         painting["gone"] = False
@@ -135,6 +136,7 @@ def reset_game():
     state.level_intro_timer = 0.0
     state.transition_active = False
     state.transition_timer = 0.0
+    state.mongolian_unlocked = False
 
 
 def kill_player(reason):
@@ -406,6 +408,9 @@ def interact():
     if state.day == 2:
         shredder_dist = distance(state.player_x, state.player_y, SHREDDER_X, SHREDDER_Y)
         if shredder_dist < 1.2:
+            if state.shredder_cooldown > 0:
+                show_message("Le broyeur est en cours d'utilisation...", 60)
+                return
             shredded_any = False
             for i in range(len(state.inventory_slots)):
                 if state.inventory_slots[i] == "Tableau":
@@ -421,7 +426,8 @@ def interact():
                     show_message("Tous les tableaux sont detruits. Va a la sortie !", 300)
                 else:
                     show_message(f"Tableaux broyes. Il en reste {remaining} a detruire.", 180)
-                sounds.play_sound("interact")
+                state.shredder_cooldown = 3.0
+                sounds.play_sound("shredder")
             else:
                 show_message("Tu n'as pas de tableau a broyer.", 120)
             return
@@ -455,7 +461,7 @@ def use_selected_item():
             sounds.play_sound("door")
             next_day()
         else:
-            show_message("La porte est verrouillee. Selectionne la clef et fais clic droit.", 220)
+            show_message("La porte est verrouillée. Essaye de la déverrouiller avec une clef.", 220)
 
 
 def next_day():
@@ -476,15 +482,15 @@ def next_day():
     state.level_intro_timer = 0.0
 
     if state.day == 2:
-        show_message("Jour 2 : les tableaux ont change de place. Jette-les avant de sortir.", 300)
+        show_message("Jour 2 : Les tableaux sont corrompus. Jette-les avant de sortir.", 300)
     elif state.day == 3:
-        show_message("Jour 3 : trouve le code au plafond, ouvre le coffre, prends la clef.", 320)
+        show_message("Jour 3 : Trouve le code pour ouvrir le coffre. Indice : Lève la tête.", 320)
     elif state.day == 4:
         reset_cable_task()
         state.power_fixed = False
         state.monster_x = 12.5
         state.monster_y = 1.5
-        show_message("Jour 4 : coupure de courant. Trouve la boite electrique loin de la sortie.", 300)
+        show_message("Jour 4 : Le monstre a coupé le courant. Trouve le disjoncteur pour remettre le courant.", 300)
     elif state.day == 5:
         state.ending_timer = 0
         state.monster_x = 2.0
@@ -502,6 +508,7 @@ def next_day():
 
     state.transition_active = True
     state.transition_timer = 0.0
+    sounds.start_level_music(state.day)
 
 
 def check_exit():
@@ -543,6 +550,9 @@ def update_day_events(dt):
     if state.transition_active:
         return
 
+    if state.shredder_cooldown > 0:
+        state.shredder_cooldown -= dt
+
     if not state.ending_cinematic:
         state.day_timer -= dt
     if state.day_timer <= 0 and not state.ending_cinematic and state.player_health != 999:
@@ -557,6 +567,7 @@ def update_day_events(dt):
                 state.shake = 22
                 show_message("BANG ! Un bruit soudain et impossible vient du plafond. Sors vite !", 320)
                 sounds.play_sound("bang")
+                sounds.play_sound("level1")
 
     if state.day == 3 and not state.stuck:
         for s in state.sink_spots:

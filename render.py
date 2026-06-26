@@ -1165,11 +1165,14 @@ def draw_ending():
             ("Avec la participation de", SMALL, (170, 170, 170)),
             ("Mossard Studio", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
-            ("Codé et Développé par", SMALL, (170, 170, 170)),
+            ("Game Developer", SMALL, (170, 170, 170)),
             ("Noah & Anthony", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
-            ("Game Design", SMALL, (170, 170, 170)),
-            ("Kerim & Mikael & Luaï", FONT, (240, 240, 240)),
+            ("Game Designer", SMALL, (170, 170, 170)),
+            ("Mikael & Luaï", FONT, (240, 240, 240)),
+            ("", FONT, (0, 0, 0)),
+            ("Sound Designer", SMALL, (170, 170, 170)),
+            ("Kerim", FONT, (240, 240, 240)),
         ]
         
         scroll_speed = 52.0  # pixels per second
@@ -1432,9 +1435,10 @@ def draw_options_menu():
     music_label = SMALL.render("Volume Musique", True, (190, 185, 165))
     screen.blit(music_label, (WIDTH // 2 - music_label.get_width() // 2, 350))
 
-    track_label = opts.get("music_track", "ambient-music")
-    track_names = {"ambient-music": "Ambiance", "mongolian-secret": "Mongolian Secret"}
-    draw_button(rects["music_track"], f"Musique: {track_names.get(track_label, track_label)}", mouse_pos)
+    if state.mongolian_unlocked:
+        track_label = opts.get("music_track", "ambient-music")
+        track_names = {"ambient-music": "Ambiance", "mongolian-secret": "Mongolian Secret"}
+        draw_button(rects["music_track"], f"Musique: {track_names.get(track_label, track_label)}", mouse_pos)
 
     fs_text = "Plein ecran: OUI" if opts["fullscreen"] else "Plein ecran: NON"
     draw_button(rects["fullscreen"], fs_text, mouse_pos)

@@ -79,6 +79,8 @@ death_pos_x = 0.0
 death_pos_y = 0.0
 death_pos_a = 0.0
 camera_z = 0.0
+mongolian_unlocked = False
+shredder_cooldown = 0.0
 transition_timer = 0.0
 transition_active = False
 

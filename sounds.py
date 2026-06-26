@@ -25,6 +25,8 @@ AUDIO_FILES = {
     "main_menu": "main_menu.wav",
     "monster_scream": "monstre_cri.mp3",
     "pickup_item": "pickup-item.wav",
+    "shredder": "broyeur.wav",
+    "level1": "level1.wav",
 }
 
 
@@ -189,3 +191,18 @@ def start_ending_music():
         pygame.mixer.music.load(path)
         pygame.mixer.music.set_volume(music_volume)
         pygame.mixer.music.play()
+
+
+def start_level_music(day):
+    if not sound_available or not sound_enabled:
+        return
+    if day == 1 or day == 5:
+        return
+    path = os.path.join(_audio_dir(), f"level{day}.wav")
+    if not os.path.isfile(path):
+        return
+    pygame.mixer.music.stop()
+    pygame.mixer.music.unload()
+    pygame.mixer.music.load(path)
+    pygame.mixer.music.set_volume(music_volume * 0.50)
+    pygame.mixer.music.play(loops=-1)

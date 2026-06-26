@@ -52,7 +52,6 @@ def start_game(reset=True):
     state.game_state = "playing"
     state.level_intro_timer = 2.5
     sounds.stop_all_sounds()
-    sounds.start_ambient_music()
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
     pygame.mouse.get_rel()
@@ -68,7 +67,6 @@ def start_intro():
     pygame.event.set_grab(True)
     pygame.mouse.get_rel()
     sounds.stop_menu_music()
-    sounds.start_ambient_music()
 
 
 def handle_menu_click(pos):
@@ -135,7 +133,7 @@ def handle_options_click(pos):
         changed = True
         sounds.play_sound("click")
 
-    if rects["music_track"] and rects["music_track"].collidepoint(pos):
+    if state.mongolian_unlocked and rects["music_track"] and rects["music_track"].collidepoint(pos):
         tracks = ["ambient-music", "mongolian-secret"]
         cur = opts.get("music_track", "ambient-music")
         idx = (tracks.index(cur) + 1) % len(tracks) if cur in tracks else 0
@@ -197,7 +195,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        if not state.debug_menu_open and event.type == pygame.KEYDOWN:
+        if not state.debug_menu_open and state.game_state == "playing" and event.type == pygame.KEYDOWN:
             if event.key == pygame.K_BACKSPACE:
                 state.debug_input = state.debug_input[:-1]
             elif event.unicode:
@@ -207,6 +205,9 @@ while running:
                     state.debug_menu_open = True
                     pygame.mouse.set_visible(True)
                     pygame.event.set_grab(False)
+                if "mongolian" in state.debug_input:
+                    state.debug_input = ""
+                    state.mongolian_unlocked = True
 
         if state.debug_menu_open:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
