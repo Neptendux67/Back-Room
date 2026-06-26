@@ -33,7 +33,7 @@ Survivre 5 jours en accomplissant les objectifs quotidiens pour s'échapper déf
 - Développeurs : Noah & Anthony
 - Game Design : Mikael & Luaï
 - Sound Design : Kerim
-- Studio : Mossard Studio / Back-Room Studios
+- Studio : Mossard Studio
 
 ---
 
@@ -597,4 +597,4 @@ python3 main.py
 
 ---
 
-*Documentation faites par ODG848 le 26 juin 2026*
+*Documentation faites par ODG747 le 26 juin 2026*
