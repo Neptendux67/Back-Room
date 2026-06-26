@@ -87,10 +87,13 @@ death_pos_y = 0.0
 death_pos_a = 0.0
 game_over_zoom = 1.0
 
-screamer_timer = 0.0
-screamer_active = False
-screamer_cooldown = 0.0
-screamer_glitch = 0.0
+jumpscare_active = False
+jumpscare_timer = 0.0
+jumpscare_duration = 0.35
+jumpscare_cooldown = 0.0
+jumpscare_zoom = 0.2
+jumpscare_flash = 0.0
+jumpscare_vhs = 0.0
 camera_z = 0.0
 mongolian_unlocked = False
 shredder_cooldown = 0.0

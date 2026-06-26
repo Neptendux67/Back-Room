@@ -414,7 +414,7 @@ while running:
     else:
         game.update_day_events(dt)
 
-    game.update_mini_screamers(dt)
+    game.update_jumpscares(dt)
 
     if state.transition_active:
         state.transition_timer += dt
@@ -475,17 +475,8 @@ while running:
         if state.safe_panel_open:
             render.draw_safe_panel()
 
-    if state.screamer_active:
-        render.draw_screamer()
-
-    if state.screamer_glitch > 0:
-        glitch = pygame.Surface((config.WIDTH, config.HEIGHT), pygame.SRCALPHA)
-        for _ in range(5):
-            gx = random.randint(0, config.WIDTH)
-            gw = random.randint(10, 80)
-            gh = random.randint(1, 4)
-            glitch.fill((255, 255, 255, random.randint(60, 150)), (gx, random.randint(0, config.HEIGHT), gw, gh))
-        config.screen.blit(glitch, (0, 0))
+    if state.jumpscare_active:
+        render.draw_jumpscare()
 
     if state.debug_menu_open:
         render.draw_debug_menu()
