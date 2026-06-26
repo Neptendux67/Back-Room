@@ -13,7 +13,7 @@ DEFAULTS = {
     "music_volume": 1.0,
     "fullscreen": True,
     "resolution_index": 0,
-    "fps_cap": 30,
+    "fps_cap": 144,
     "music_track": "ambient-music",
 }
 

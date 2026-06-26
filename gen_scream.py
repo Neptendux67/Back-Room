@@ -1,4 +1,3 @@
-"""Generate a terrifying monster scream WAV file for the backrooms game."""
 import wave
 import struct
 import math
