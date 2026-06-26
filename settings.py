@@ -44,7 +44,6 @@ def apply():
     render.clear_pause_bg()
     render._BODY_OVERLAY = None
     render._SHADE_PANEL = None
-    render._MENU_VIGNETTE = None
     render._MENU_BG = None
     render._DUST = None
 

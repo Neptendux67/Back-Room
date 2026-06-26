@@ -6,7 +6,6 @@ import pygame
 import pygame.surfarray as surfarray
 from config import WIDTH, HEIGHT, FOV, RAYS, MAX_DEPTH, EXIT_X, EXIT_Y, CABLE_X, CABLE_Y, SAFE_X, SAFE_Y, CABLE_COLORS, CORRIDOR_LENGTH, TILE_SCALE
 import state
-import sounds
 import game
 
 TEX_COLS = None
@@ -20,13 +19,9 @@ TEX_W = 32
 TEX_H = 32
 TEX_INDICES = {}
 
-_COS_OFF = None
-_SIN_OFF = None
 _BODY_OVERLAY = None
 _SHADE_PANEL = None
 _PAUSE_BG = None
-_MENU_LOGO = None
-_MENU_VIGNETTE = None
 _FPS_TICKS = 0
 _FPS_COUNT = 0
 _VHS_SCANLINES = None
@@ -34,7 +29,7 @@ _FPS_DISPLAY = 0
 
 
 def load_textures():
-    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, _COS_OFF, _SIN_OFF, MONSTER_FRAMES, MONSTER_FW, MONSTER_FH, MONSTER_SITTING_SURF, PLAYER_SLUMPED_SURF
+    global TEX_COLS, TEX_SURF, TEX_W, TEX_H, MONSTER_FRAMES, MONSTER_FW, MONSTER_FH, MONSTER_SITTING_SURF, PLAYER_SLUMPED_SURF
     tex_dir = os.path.join(os.path.dirname(__file__), "assets", "textures")
     path = os.path.join(tex_dir, "Wall-Texture.png")
     try:
@@ -55,10 +50,6 @@ def load_textures():
         TEX_COLS = [arr[:, i, :].copy() for i in range(TEX_W)]
         for h in range(1, HEIGHT * 2 + 1):
             TEX_INDICES[h] = np.linspace(0, TEX_H - 1, h, dtype=np.uint16)
-
-    off = np.arange(WIDTH, dtype=np.float32) / WIDTH * FOV - FOV / 2
-    _COS_OFF = np.cos(off)
-    _SIN_OFF = np.sin(off)
 
     try:
         mon_path = os.path.join(tex_dir, "Monster-Spritesheet.png")
@@ -121,6 +112,7 @@ def cast_rays():
     px = state.player_x
     py = state.player_y
     p_angle = state.player_a
+    camera_z = state.camera_z
 
     for ray in range(RAYS):
         ray_angle = start_angle + ray / RAYS * FOV
@@ -180,15 +172,13 @@ def cast_rays():
             wall_x = px + depth * cos_a
         wall_x -= math.floor(wall_x)
 
-        # Correct fish-eye effect (project Euclidean distance onto player's view vector)
-        depth_corrected = depth * math.cos(ray_angle - state.player_a)
+        depth_corrected = depth * math.cos(ray_angle - p_angle)
         depth_corrected = min(depth_corrected, MAX_DEPTH)
         wall_h = min(100000, int(HEIGHT / (depth_corrected + 0.0001)))
 
         x_screen = int(ray * WIDTH / RAYS)
         w = int(WIDTH / RAYS) + 1
         x_end = min(WIDTH, x_screen + w)
-        camera_z = getattr(state, "camera_z", 0.0)
         horizon = HEIGHT // 2 + state.look_pitch
         y1 = int(horizon - ((0.5 - camera_z) / (depth_corrected + 0.0001)) * HEIGHT)
         y2 = y1 + wall_h
@@ -366,7 +356,7 @@ def draw_sprite(obj_x, obj_y, color, size=1.0, label=None, shape="rect", depth_b
     else:
         sprite_w = max(8, min(WIDTH, sprite_h // 2))
     horizon = HEIGHT // 2 + state.look_pitch
-    camera_z = getattr(state, "camera_z", 0.0)
+    camera_z = state.camera_z
     if shape in ("monster", "player_slumped", "door"):
         y = int(horizon - (((-0.5 + size - camera_z) / dist) * HEIGHT))
     else:
@@ -537,7 +527,7 @@ def make_cuboid_faces(cu, cv, cw, su, sv, sw, color, death_x, death_y, death_a):
     proj_corners = []
     depths = []
     
-    camera_z = getattr(state, "camera_z", 0.0)
+    camera_z = state.camera_z
     cos_a = math.cos(state.player_a)
     sin_a = math.sin(state.player_a)
     
@@ -780,8 +770,6 @@ def draw_crosshair():
     pygame.draw.line(screen, (230, 230, 220), (cx, cy + 3), (cx, cy + 8), 1)
 
 
-
-
 def draw_ceiling_code_hint():
     from config import screen, BIG
     if state.day != 3:
@@ -956,8 +944,6 @@ def draw_ui():
         _FPS_COUNT = 0
     fps_txt = SMALL.render(f"FPS: {_FPS_DISPLAY}", True, (120, 200, 120))
     screen.blit(fps_txt, (WIDTH - fps_txt.get_width() - 30, 31))
-
-    # ----- New lore message disabled here (drawn separately after objects) -----
 
     if state.stuck:
         txt = BIG.render("TU T'ENFONCES ! APPUIE SUR ESPACE", True, (255, 80, 80))
@@ -1344,11 +1330,9 @@ def draw_death_screen():
         screen.blit(txt, (rect.centerx - txt.get_width() // 2, rect.centery - txt.get_height() // 2))
 
 
-
-
 def draw_loading_screen():
-    from config import screen, BIG, FONT, SMALL
-    progress = min(1.0, state.loading_timer / 10.0)
+    from config import screen, BIG, FONT, SMALL, LOADING_DURATION
+    progress = min(1.0, state.loading_timer / LOADING_DURATION)
     messages = [
         "Compilation des fichiers",
         "Generation du terrain",
@@ -1454,7 +1438,6 @@ def draw_intro_cinematic():
 
 _DUST = None
 _MENU_BG = None
-_MENU_HOVER_SOUND_PLAYED = {}
 
 
 def _init_dust():
@@ -1480,8 +1463,6 @@ def _draw_dust(screen, dt):
             p["y"] = HEIGHT + 5
             p["x"] = random.random() * WIDTH
         screen.set_at((int(p["x"]), int(p["y"])), (p["b"], p["b"], p["b"], min(255, p["b"])))
-
-
 
 
 def _draw_atmosphere(screen, time):

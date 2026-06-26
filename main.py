@@ -90,7 +90,6 @@ def handle_menu_click(pos):
 
 
 def handle_options_click(pos):
-    import settings
     rects = render.options_rects()
     opts = settings.get()
     changed = False
@@ -454,7 +453,7 @@ while running:
             orig_py = state.player_y
             orig_pa = state.player_a
             orig_pitch = state.look_pitch
-            orig_cz = getattr(state, "camera_z", 0.0)
+            orig_cz = state.camera_z
             
             state.camera_z = 0.38
             state.player_x = state.death_pos_x - math.cos(state.death_pos_a) * dist

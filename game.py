@@ -192,10 +192,6 @@ def reset_game():
     state.transition_active = False
     state.transition_timer = 0.0
     state.mongolian_unlocked = False
-    state.jumpscare_active = False
-    state.jumpscare_timer = 0.0
-    state.jumpscare_cooldown = random.uniform(30, 50)
-    state.jumpscare_vhs = 0.0
 
 
 def kill_player(reason):
