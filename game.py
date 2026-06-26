@@ -124,41 +124,6 @@ def lore_input():
     return False
 
 
-def update_jumpscares(dt):
-    if state.game_state != "playing" or state.death_cinematic or state.lore_active or state.transition_active:
-        state.jumpscare_active = False
-        return
-
-    if state.jumpscare_vhs > 0:
-        state.jumpscare_vhs -= dt
-
-    if state.jumpscare_active:
-        state.jumpscare_timer += dt
-        p = min(1.0, state.jumpscare_timer / state.jumpscare_duration)
-        state.jumpscare_zoom = 0.15 + p * p * 3.0
-        if state.jumpscare_timer >= state.jumpscare_duration:
-            state.jumpscare_active = False
-            state.jumpscare_vhs = 0.4
-        return
-
-    if state.jumpscare_cooldown > 0:
-        state.jumpscare_cooldown -= dt
-        return
-
-    if random.random() < 0.002:
-        state.jumpscare_active = True
-        state.jumpscare_timer = 0.0
-        state.jumpscare_duration = random.uniform(0.2, 0.35)
-        state.jumpscare_zoom = 0.15
-        state.jumpscare_flash = 0.1
-        state.jumpscare_cooldown = random.uniform(35, 70)
-        state.shake = 22
-        snd = sounds.sounds.get("monster_scream")
-        if snd:
-            snd.set_volume(min(1.0, sounds.sound_volume * 1.4))
-            snd.play()
-
-
 def reset_cable_task():
     state.cable_progress = 0
     state.selected_cable = None
@@ -251,9 +216,6 @@ def kill_player(reason):
     state.death_pos_a = state.player_a
 
     sounds.play_sound("monster_scream")
-    state.jumpscare_active = False
-    state.jumpscare_timer = 0.0
-    state.jumpscare_vhs = 0.0
 
     if state.day == 5:
         # Place the monster right next to the player's body
