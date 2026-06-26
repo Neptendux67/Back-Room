@@ -1147,17 +1147,17 @@ def draw_ending():
             ("FIN", BIG, (255, 230, 120)),
             ("", FONT, (0, 0, 0)),
             ("", FONT, (0, 0, 0)),
-            ("avec la participation de", SMALL, (170, 170, 170)),
+            ("Avec la participation de", SMALL, (170, 170, 170)),
             ("Mossard Studio & Play to Code Studio", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
-            ("codé et développé par", SMALL, (170, 170, 170)),
-            ("Noha & Anthony", FONT, (240, 240, 240)),
+            ("Codé et Développé par", SMALL, (170, 170, 170)),
+            ("Noah & Anthony", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
-            ("son et textures", SMALL, (170, 170, 170)),
+            ("Son et Textures", SMALL, (170, 170, 170)),
             ("Kerim & Mikael", FONT, (240, 240, 240)),
             ("", FONT, (0, 0, 0)),
-            ("accompagnement personnel et leak du code source", SMALL, (170, 170, 170)),
-            ("A un gars random dans le tram Luiai", FONT, (255, 220, 100)),
+            ("Accompagnement personnel et leak du code source", SMALL, (170, 170, 170)),
+            ("A un gars random dans le tram by Luai", FONT, (255, 220, 100)),
         ]
         
         scroll_speed = 52.0  # pixels per second
