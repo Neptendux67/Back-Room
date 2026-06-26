@@ -119,7 +119,6 @@ def reset_game():
     state.ending_timer = 0
     state.game_finished = False
     state.death_message = ""
-    state.corridor_exit_open = False
     state.ending_cinematic = False
     state.stamina = 100
     state.is_sprinting = False
@@ -357,7 +356,7 @@ def handle_safe_key(event):
 
 def get_interact_prompt():
     if state.day == 5:
-        if state.corridor_exit_open and distance(state.player_x, state.player_y, 2.0, CORRIDOR_LENGTH - 1.5) < 1.2:
+        if distance(state.player_x, state.player_y, 2.0, CORRIDOR_LENGTH - 1.5) < 1.2:
             return "Appuie sur E pour sortir"
         return None
     if state.day == 2:
@@ -376,9 +375,10 @@ def get_interact_prompt():
 
 
 def interact():
-    if state.day == 5 and state.corridor_exit_open:
-        door_dist = distance(state.player_x, state.player_y, 2.0, CORRIDOR_LENGTH - 1.5)
-        if door_dist < 1.2:
+    if state.day == 5:
+        if distance(state.player_x, state.player_y, 2.0, CORRIDOR_LENGTH - 1.5) < 1.2:
+            if state.game_finished:
+                return
             sounds.play_sound("door")
             sounds.stop_ambient_music()
             state.monster_visible = False
@@ -588,11 +588,6 @@ def update_day_events(dt):
             reset_cable_task()
             state.monster_x = 12.5
             state.monster_y = 1.5
-
-    if state.day == 5 and not state.corridor_exit_open and state.day_timer <= 10.0:
-        state.corridor_exit_open = True
-        show_message("Une porte de sortie apparait au fond ! Cours !", 300)
-        state.shake = 18
 
     if state.day == 5 and not state.ending_cinematic:
         # Detect player starting to move

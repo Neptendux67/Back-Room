@@ -60,7 +60,6 @@ loading_timer = 0.0
 intro_timer = 0.0
 game_finished = False
 game_state = "loading"
-corridor_exit_open = False
 ending_cinematic = False
 death_message = ""
 debug_input = ""
