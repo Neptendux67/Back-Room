@@ -1344,57 +1344,6 @@ def draw_death_screen():
         screen.blit(txt, (rect.centerx - txt.get_width() // 2, rect.centery - txt.get_height() // 2))
 
 
-def draw_jumpscare():
-    if not state.jumpscare_active or not MONSTER_SITTING_SURF:
-        return
-
-    from config import screen
-    t = state.jumpscare_timer
-    duration = state.jumpscare_duration
-    p = min(1.0, t / duration)
-
-    z = state.jumpscare_zoom
-    sw = max(4, int(WIDTH * z))
-    sh = max(4, int(HEIGHT * z))
-    scaled = pygame.transform.scale(MONSTER_SITTING_SURF, (sw, sh))
-
-    rot = random.uniform(-3, 3) * (1.0 - p)
-    if abs(rot) > 0.5:
-        scaled = pygame.transform.rotate(scaled, rot)
-
-    ox = random.randint(-int(8 * (1.0 - p)), int(8 * (1.0 - p)))
-    oy = random.randint(-int(8 * (1.0 - p)), int(8 * (1.0 - p)))
-    bx = (WIDTH - sw) // 2 + ox
-    by = (HEIGHT - sh) // 2 + oy
-    screen.blit(scaled, (bx, by))
-
-    remaining = max(0, 1.0 - p)
-    dark_alpha = int(remaining * 100)
-    if dark_alpha > 0:
-        dark = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        dark.fill((0, 0, 0, dark_alpha))
-        screen.blit(dark, (0, 0))
-
-    if state.jumpscare_flash > 0:
-        flash_alpha = int(min(255, state.jumpscare_flash * 3000))
-        flash = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        flash.fill((255, 255, 255, flash_alpha))
-        screen.blit(flash, (0, 0))
-        state.jumpscare_flash -= 1 / 60
-
-    if random.random() < 0.4:
-        for _ in range(4):
-            gx = random.randint(0, WIDTH)
-            gw = random.randint(8, 50)
-            gh = random.randint(1, 5)
-            screen.fill((255, 255, 255, random.randint(60, 180)), (gx, random.randint(0, HEIGHT), gw, gh))
-
-    scan = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    for sy in range(0, HEIGHT, 3):
-        sa = random.randint(0, 40)
-        scan.fill((0, 0, 0, sa), (0, sy, WIDTH, 1))
-    screen.blit(scan, (0, 0))
-
 
 
 def draw_loading_screen():
